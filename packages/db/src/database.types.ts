@@ -920,6 +920,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      register_image: {
+        Args: {
+          p_bytes: number
+          p_height?: number
+          p_mime_type: string
+          p_storage_key: string
+          p_width?: number
+        }
+        Returns: {
+          bytes: number | null
+          created_at: string
+          duration_ms: number | null
+          height: number | null
+          id: string
+          kind: string
+          mime_type: string
+          owner_id: string
+          placeholder: string | null
+          status: string
+          storage_key: string
+          updated_at: string
+          variants: Json
+          width: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "media_assets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       reject_follow_request: {
         Args: { p_follower: string }
         Returns: undefined

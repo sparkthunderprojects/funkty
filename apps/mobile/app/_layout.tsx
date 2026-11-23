@@ -16,6 +16,8 @@ function Routes() {
       </Stack.Protected>
       <Stack.Protected guard={!!session && !!profile}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="post/[id]" options={{ headerShown: true, title: 'Post' }} />
+        <Stack.Screen name="user/[username]" options={{ headerShown: true, title: 'Profile' }} />
       </Stack.Protected>
     </Stack>
   );

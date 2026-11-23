@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
+import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
 import { Button } from '../../src/ui/Button';
+import { PostGrid } from '../../src/ui/PostGrid';
 import { Screen } from '../../src/ui/Screen';
 
 type Stats = { posts: number; followers: number; following: number };
@@ -12,22 +15,32 @@ export default function Profile() {
   const { profile, signOut } = useSession();
   const { colors, fontSize, spacing } = useTheme();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
 
-  useEffect(() => {
-    if (!profile) return;
-    supabase
-      .from('profile_stats')
-      .select('posts_count, followers_count, following_count')
-      .eq('user_id', profile.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setStats({ posts: data.posts_count, followers: data.followers_count, following: data.following_count });
-      });
-  }, [profile]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!profile) return;
+      supabase
+        .from('profile_stats')
+        .select('posts_count, followers_count, following_count')
+        .eq('user_id', profile.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) setStats({ posts: data.posts_count, followers: data.followers_count, following: data.following_count });
+        });
+      supabase
+        .from('posts')
+        .select(feedSelect)
+        .eq('author_id', profile.id)
+        .order('id', { ascending: false })
+        .limit(60)
+        .then(({ data }) => setPosts((data ?? []) as unknown as FeedPost[]));
+    }, [profile]),
+  );
 
   if (!profile) return null;
   return (
-    <Screen>
+    <Screen scroll>
       <Text style={{ color: colors.text, fontSize: fontSize.headline, fontWeight: '800' }}>
         {profile.display_name || profile.username}
       </Text>
@@ -43,10 +56,13 @@ export default function Profile() {
           ),
         )}
       </View>
-      {profile.is_private ? (
-        <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>Your account is private.</Text>
-      ) : null}
-      <View style={{ flex: 1 }} />
+      {posts.length > 0 ? (
+        <PostGrid posts={posts} />
+      ) : (
+        <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
+          No posts yet. Tap Create to share your first photo.
+        </Text>
+      )}
       <Button label="Log out" variant="secondary" onPress={signOut} />
     </Screen>
   );
