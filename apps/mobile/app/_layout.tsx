@@ -18,6 +18,12 @@ function Routes() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="post/[id]" options={{ headerShown: true, title: 'Post' }} />
         <Stack.Screen name="user/[username]" options={{ headerShown: true, title: 'Profile' }} />
+        <Stack.Screen name="story/[username]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+        <Stack.Screen name="messages/index" options={{ headerShown: true, title: 'Messages' }} />
+        <Stack.Screen name="messages/[username]" options={{ headerShown: true, title: 'Message' }} />
+        <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
+        <Stack.Screen name="tag/[tag]" options={{ headerShown: true, title: 'Hashtag' }} />
+        <Stack.Screen name="connections/[username]" options={{ headerShown: true, title: 'People' }} />
       </Stack.Protected>
     </Stack>
   );

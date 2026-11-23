@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,7 +6,9 @@ import { useSession } from '../../src/lib/session';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
+import { Logo } from '../../src/ui/Logo';
 import { PostCard } from '../../src/ui/PostCard';
+import { StoriesTray } from '../../src/ui/StoriesTray';
 
 type Mode = 'everyone' | 'following';
 
@@ -14,6 +16,8 @@ type Mode = 'everyone' | 'following';
 export default function Home() {
   const { colors, fontSize, spacing } = useTheme();
   const { profile } = useSession();
+  const router = useRouter();
+  const [unreadDms, setUnreadDms] = useState(0);
   const [mode, setMode] = useState<Mode>('everyone');
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [liked, setLiked] = useState<Set<string>>(new Set());
@@ -49,6 +53,8 @@ export default function Home() {
         setSaved(new Set((saves.data ?? []).map((l) => l.post_id)));
       }
     }
+    const inbox = await supabase.rpc('inbox');
+    setUnreadDms((inbox.data ?? []).reduce((n, c) => n + Number(c.unread), 0));
     setLoading(false);
   }, [mode, profile]);
 
@@ -61,9 +67,35 @@ export default function Home() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm }}>
-        <Text style={{ color: colors.primary, fontSize: fontSize.headline, fontWeight: '800', letterSpacing: -1 }}>
-          funkty
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Logo height={34} />
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={unreadDms > 0 ? `Messages, ${unreadDms} unread` : 'Messages'}
+            onPress={() => router.push('/messages')}
+            hitSlop={10}
+          >
+            <Text style={{ color: colors.text, fontSize: 28 }}>✉</Text>
+            {unreadDms > 0 ? (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -6,
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  backgroundColor: colors.danger,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 4,
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>{unreadDms}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           {(['everyone', 'following'] as const).map((m) => (
             <Pressable
@@ -91,6 +123,7 @@ export default function Home() {
       </View>
       <FlatList
         data={posts}
+        ListHeaderComponent={<StoriesTray />}
         keyExtractor={(post) => post.id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}

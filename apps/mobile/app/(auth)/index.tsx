@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 import { useTheme } from '../../src/theme';
 import { Button } from '../../src/ui/Button';
@@ -10,13 +11,14 @@ export default function Welcome() {
   return (
     <Screen>
       <View style={{ flex: 1, justifyContent: 'center', gap: spacing.sm }}>
-        <Text
+        <Image
+          source={require('../../assets/logo-full.png')}
           accessibilityRole="header"
-          style={{ color: colors.primary, fontSize: 56, fontWeight: '800', letterSpacing: -2 }}
-        >
-          funkty
-        </Text>
-        <Text style={{ color: colors.text, fontSize: 22, fontWeight: '600' }}>
+          accessibilityLabel="Funkty"
+          style={{ width: '100%', aspectRatio: 1536 / 1024, borderRadius: 16 }}
+          contentFit="cover"
+        />
+        <Text style={{ color: colors.text, fontSize: 22, fontWeight: '600', textAlign: 'center' }}>
           Share what moves you.
         </Text>
       </View>

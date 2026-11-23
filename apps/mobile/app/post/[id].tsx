@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { type FeedPost, feedSelect, friendlyError } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
@@ -11,6 +11,16 @@ import { Screen } from '../../src/ui/Screen';
 import { TextField } from '../../src/ui/TextField';
 
 type Comment = { id: string; body: string; created_at: string; author_id: string; profiles: { username: string } | null };
+
+const reportReasons: [string, string][] = [
+  ['spam', 'Spam'],
+  ['nudity_sexual', 'Nudity or sexual content'],
+  ['harassment', 'Bullying or harassment'],
+  ['hate_speech', 'Hate speech'],
+  ['violence', 'Violence'],
+  ['self_harm', 'Self-harm'],
+  ['other', 'Something else'],
+];
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +34,10 @@ export default function PostDetail() {
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reported, setReported] = useState(false);
+  const router = useRouter();
 
   const load = useCallback(async () => {
     if (!profile || !id) return;
@@ -68,6 +82,19 @@ export default function PostDetail() {
     void load();
   }
 
+  async function deletePost() {
+    if (!id) return;
+    await supabase.rpc('delete_post', { p_post_id: id });
+    router.back();
+  }
+
+  async function report(code: string) {
+    if (!id) return;
+    await supabase.rpc('report_content', { p_target_type: 'post', p_target_id: id, p_reason_code: code });
+    setReporting(false);
+    setReported(true);
+  }
+
   if (loading) {
     return (
       <Screen>
@@ -86,37 +113,61 @@ export default function PostDetail() {
   }
 
   return (
-    <Screen>
-      <FlatList
-        data={comments}
-        keyExtractor={(c) => c.id}
-        ListHeaderComponent={
-          <View style={{ marginHorizontal: -spacing.lg, marginBottom: spacing.md }}>
-            <PostCard post={post} liked={liked} saved={saved} />
-          </View>
-        }
-        ListEmptyComponent={
+    <Screen scroll>
+      <View style={{ marginHorizontal: -spacing.lg }}>
+        <PostCard post={post} liked={liked} saved={saved} />
+      </View>
+      <View style={{ gap: spacing.sm }}>
+        {comments.length === 0 ? (
           <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>No comments yet. Start the conversation.</Text>
-        }
-        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-        renderItem={({ item }) => (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }}>
-            <Text style={{ color: colors.text, fontSize: fontSize.body, flex: 1 }}>
-              <Text style={{ fontWeight: '700' }}>@{item.profiles?.username ?? 'unknown'} </Text>
-              {item.body}
-            </Text>
-            {item.author_id === profile?.id || post.author_id === profile?.id ? (
-              <Text
-                accessibilityRole="button"
-                onPress={() => remove(item.id)}
-                style={{ color: colors.textMuted, fontSize: fontSize.caption }}
-              >
-                Delete
+        ) : (
+          comments.map((item) => (
+            <View key={item.id} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }}>
+              <Text style={{ color: colors.text, fontSize: fontSize.body, flex: 1 }}>
+                <Text style={{ fontWeight: '700' }}>{item.profiles?.username ?? 'unknown'} </Text>
+                {item.body}
               </Text>
-            ) : null}
-          </View>
+              {item.author_id === profile?.id || post.author_id === profile?.id ? (
+                <Text accessibilityRole="button" onPress={() => remove(item.id)} style={{ color: colors.textMuted, fontSize: fontSize.caption }}>
+                  Delete
+                </Text>
+              ) : null}
+            </View>
+          ))
         )}
-      />
+      </View>
+      {post.author_id === profile?.id ? (
+        confirmDelete ? (
+          <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+            <Text style={{ color: colors.text, fontSize: fontSize.body, flex: 1 }}>Delete this post for good?</Text>
+            <View style={{ width: 90 }}>
+              <Button label="Delete" onPress={deletePost} />
+            </View>
+            <View style={{ width: 90 }}>
+              <Button label="Cancel" variant="secondary" onPress={() => setConfirmDelete(false)} />
+            </View>
+          </View>
+        ) : (
+          <Text accessibilityRole="button" onPress={() => setConfirmDelete(true)} style={{ color: colors.textMuted, fontSize: fontSize.caption }}>
+            Delete post
+          </Text>
+        )
+      ) : reported ? (
+        <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>Thanks. We will review this post.</Text>
+      ) : reporting ? (
+        <View style={{ gap: spacing.xs }}>
+          <Text style={{ color: colors.text, fontSize: fontSize.body, fontWeight: '700' }}>Why are you reporting this?</Text>
+          {reportReasons.map(([code, label]) => (
+            <Text key={code} accessibilityRole="button" onPress={() => report(code)} style={{ color: colors.primary, fontSize: fontSize.body }}>
+              {label}
+            </Text>
+          ))}
+        </View>
+      ) : (
+        <Text accessibilityRole="button" onPress={() => setReporting(true)} style={{ color: colors.textMuted, fontSize: fontSize.caption }}>
+          Report post
+        </Text>
+      )}
       {error ? (
         <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: fontSize.body }}>
           {error}

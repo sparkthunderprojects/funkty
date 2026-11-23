@@ -1,10 +1,12 @@
-import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { type FeedPost, firstImage, timeAgo } from '../lib/posts';
+import { type FeedPost, postImages, timeAgo } from '../lib/posts';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
+import { Avatar } from './Avatar';
+import { Carousel } from './Carousel';
+import { RichText } from './RichText';
 
 type Props = { post: FeedPost; liked: boolean; saved: boolean };
 
@@ -13,7 +15,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
   const [liked, setLiked] = useState(initiallyLiked);
   const [saved, setSaved] = useState(initiallySaved);
   const [likes, setLikes] = useState(post.post_stats?.like_count ?? 0);
-  const image = firstImage(post);
+  const images = postImages(post);
   const username = post.profiles?.username ?? 'unknown';
   const comments = post.post_stats?.comment_count ?? 0;
 
@@ -43,28 +45,17 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           accessibilityRole="link"
           style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md }}
         >
-          <View
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 17,
-              backgroundColor: colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: colors.onPrimary, fontWeight: '800' }}>{username.slice(0, 1).toUpperCase()}</Text>
-          </View>
+          <Avatar username={username} storageKey={post.profiles?.avatar?.storage_key} />
           <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSize.body }}>{username}</Text>
         </Pressable>
       </Link>
-      {image ? (
-        <Image
-          source={{ uri: image.url }}
-          accessibilityLabel={image.alt ?? `Photo by ${username}`}
-          style={{ width: '100%', aspectRatio: image.ratio, backgroundColor: colors.surface }}
-          contentFit="cover"
-          transition={150}
+      {images.length > 0 ? (
+        <Carousel
+          images={images}
+          label={`Photo by ${username}`}
+          onDoubleTap={() => {
+            if (!liked) void toggleLike();
+          }}
         />
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md }}>
@@ -98,10 +89,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           {likes} {likes === 1 ? 'like' : 'likes'}
         </Text>
         {post.caption ? (
-          <Text style={{ color: colors.text, fontSize: fontSize.body }}>
-            <Text style={{ fontWeight: '700' }}>{username} </Text>
-            {post.caption}
-          </Text>
+          <RichText lead={username} text={post.caption} style={{ color: colors.text, fontSize: fontSize.body }} />
         ) : null}
         {comments > 0 ? (
           <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
