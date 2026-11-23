@@ -18,6 +18,7 @@ export default function PostDetail() {
   const { colors, fontSize, spacing } = useTheme();
   const [post, setPost] = useState<FeedPost | null>(null);
   const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState('');
@@ -26,18 +27,20 @@ export default function PostDetail() {
 
   const load = useCallback(async () => {
     if (!profile || !id) return;
-    const [postRes, likeRes, commentRes] = await Promise.all([
+    const [postRes, likeRes, saveRes, commentRes] = await Promise.all([
       supabase.from('posts').select(feedSelect).eq('id', id).maybeSingle(),
       supabase.from('likes').select('post_id').eq('user_id', profile.id).eq('post_id', id).maybeSingle(),
+      supabase.from('saves').select('post_id').eq('user_id', profile.id).eq('post_id', id).maybeSingle(),
       supabase
         .from('comments')
-        .select('id, body, created_at, author_id, profiles(username)')
+        .select('id, body, created_at, author_id, profiles!comments_author_id_fkey(username)')
         .eq('post_id', id)
         .order('id', { ascending: true })
         .limit(200),
     ]);
     setPost((postRes.data as unknown as FeedPost) ?? null);
     setLiked(!!likeRes.data);
+    setSaved(!!saveRes.data);
     setComments((commentRes.data ?? []) as unknown as Comment[]);
     setLoading(false);
   }, [id, profile]);
@@ -89,7 +92,7 @@ export default function PostDetail() {
         keyExtractor={(c) => c.id}
         ListHeaderComponent={
           <View style={{ marginHorizontal: -spacing.lg, marginBottom: spacing.md }}>
-            <PostCard post={post} liked={liked} />
+            <PostCard post={post} liked={liked} saved={saved} />
           </View>
         }
         ListEmptyComponent={

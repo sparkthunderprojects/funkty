@@ -19,7 +19,7 @@ export type FeedPost = {
 };
 
 export const feedSelect =
-  'id, caption, created_at, author_id, profiles(username, display_name), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height))';
+  'id, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height))';
 
 export function mediaUrl(storageKey: string): string {
   return supabase.storage.from('media').getPublicUrl(storageKey).data.publicUrl;
@@ -98,4 +98,13 @@ export async function publishPhoto(
   });
   if (published.error || !published.data) throw new Error(friendlyError(published.error?.message));
   return published.data.id;
+}
+
+export function timeAgo(iso: string): string {
+  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  if (s < 604800) return `${Math.floor(s / 86400)}d`;
+  return new Date(iso).toLocaleDateString();
 }

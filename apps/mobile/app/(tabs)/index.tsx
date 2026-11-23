@@ -17,6 +17,7 @@ export default function Home() {
   const [mode, setMode] = useState<Mode>('everyone');
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [liked, setLiked] = useState<Set<string>>(new Set());
+  const [saved, setSaved] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
@@ -39,12 +40,13 @@ export default function Home() {
       const rows = (data ?? []) as unknown as FeedPost[];
       setPosts(rows);
       if (rows.length > 0) {
-        const likes = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('user_id', profile.id)
-          .in('post_id', rows.map((r) => r.id));
+        const ids = rows.map((r) => r.id);
+        const [likes, saves] = await Promise.all([
+          supabase.from('likes').select('post_id').eq('user_id', profile.id).in('post_id', ids),
+          supabase.from('saves').select('post_id').eq('user_id', profile.id).in('post_id', ids),
+        ]);
         setLiked(new Set((likes.data ?? []).map((l) => l.post_id)));
+        setSaved(new Set((saves.data ?? []).map((l) => l.post_id)));
       }
     }
     setLoading(false);
@@ -91,7 +93,7 @@ export default function Home() {
         data={posts}
         keyExtractor={(post) => post.id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
-        ItemSeparatorComponent={() => <View style={{ height: spacing.xl }} />}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
         contentContainerStyle={{ paddingVertical: spacing.md, flexGrow: 1 }}
         ListEmptyComponent={
           loading ? undefined : (
@@ -104,7 +106,7 @@ export default function Home() {
             </Text>
           )
         }
-        renderItem={({ item }) => <PostCard post={item} liked={liked.has(item.id)} />}
+        renderItem={({ item }) => <PostCard post={item} liked={liked.has(item.id)} saved={saved.has(item.id)} />}
       />
     </SafeAreaView>
   );
