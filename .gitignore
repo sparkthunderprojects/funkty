@@ -16,3 +16,6 @@ ios/
 android/
 supabase/.branches
 supabase/.temp
+
+# Bolt regenerates this on install; the workspace uses pnpm-lock.yaml.
+package-lock.json
