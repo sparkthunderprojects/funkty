@@ -7,6 +7,7 @@ import { shareLink } from '../lib/share';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 import { ActionSheet, type SheetAction } from './ActionSheet';
+import { CollectionSheet, CreditsSheet, SeriesSheet } from './PostSheets';
 
 const reportReasons: [string, string][] = [
   ['spam', 'Spam'],
@@ -23,19 +24,30 @@ type Props = {
   caption: string | null;
   commentsEnabled: boolean;
   spoiler: boolean;
+  compare: boolean;
+  imageCount: number;
+  series: { id: string; title: string } | null;
+  credits: { position: number; role: string; name: string }[];
   saved?: boolean;
   onSaved?: () => void;
   visible: boolean;
   onClose: () => void;
-  onEdited: (patch: { caption?: string | null; commentsEnabled?: boolean; spoiler?: boolean }) => void;
+  onEdited: (patch: {
+    caption?: string | null;
+    commentsEnabled?: boolean;
+    spoiler?: boolean;
+    compare?: boolean;
+    series?: { id: string; title: string } | null;
+    credits?: { position: number; role: string; name: string }[];
+  }) => void;
   onDeleted: () => void;
   onMuted?: () => void;
 };
 
-type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'thanks';
+type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
-export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
+export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
   const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const [panel, setPanel] = useState<Panel>('menu');
@@ -94,6 +106,12 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     if (!e) onEdited({ spoiler: next });
   }
 
+  async function toggleCompare() {
+    const next = !compare;
+    const { error: e } = await supabase.rpc('set_post_compare', { p_post_id: post.id, p_on: next });
+    if (!e) onEdited({ compare: next });
+  }
+
   async function remove() {
     const { error: e } = await supabase.rpc('delete_post', { p_post_id: post.id });
     if (e) return setError(friendlyError(e.message));
@@ -141,6 +159,16 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
         </SafeAreaView>
       </Modal>
     );
+  }
+
+  if (panel === 'collections') {
+    return <CollectionSheet postId={post.id} visible={visible} onClose={close} onSaved={onSaved} />;
+  }
+  if (panel === 'series') {
+    return <SeriesSheet postId={post.id} currentId={series?.id ?? null} visible={visible} onClose={close} onChanged={(s) => onEdited({ series: s })} />;
+  }
+  if (panel === 'credits') {
+    return <CreditsSheet postId={post.id} initial={credits.map(({ role, name }) => ({ role, name }))} visible={visible} onClose={close} onSaved={(c) => onEdited({ credits: c })} />;
   }
 
   if (panel === 'note') {
@@ -199,11 +227,16 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: commentsEnabled ? 'Turn off commenting' : 'Turn on commenting', onPress: then(() => void toggleComments()) },
                 { label: spoiler ? 'Remove spoiler mark' : 'Mark as spoiler', onPress: then(() => void toggleSpoiler()) },
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
+                { label: series ? `Series: ${series.title}` : 'Add to a series', onPress: () => setPanel('series') },
+                { label: credits.length ? 'Edit credits' : 'Add credits', onPress: () => setPanel('credits') },
+                ...(imageCount === 2 ? [{ label: compare ? 'Show as normal photos' : 'Show as before and after', onPress: then(() => void toggleCompare()) }] : []),
+                { label: 'Save to collection', onPress: () => setPanel('collections') },
                 { label: 'Share', onPress: share },
                 { label: 'Delete', onPress: () => setPanel('confirm-delete'), destructive: true },
               ]
             : [
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
+                { label: 'Save to collection', onPress: () => setPanel('collections') },
                 { label: 'Share', onPress: share },
                 { label: `Mute ${post.profiles?.username ?? 'account'}`, onPress: () => void mute() },
                 { label: 'Report', onPress: () => setPanel('report'), destructive: true },

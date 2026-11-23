@@ -16,6 +16,7 @@ import {
   publishStoryPhoto,
   publishVideo,
 } from '../../src/lib/posts';
+import { supabase } from '../../src/lib/supabase';
 import { useSession } from '../../src/lib/session';
 import { useTheme } from '../../src/theme';
 import { Clip } from '../../src/ui/Clip';
@@ -40,6 +41,7 @@ export default function Create() {
   const [multiple, setMultiple] = useState(false);
   const [caption, setCaption] = useState('');
   const [spoiler, setSpoiler] = useState(false);
+  const [compare, setCompare] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [libraryDenied, setLibraryDenied] = useState(false);
@@ -132,12 +134,16 @@ export default function Create() {
         const rendered = [];
         for (const item of items) rendered.push(await renderEdit(item, item.edit, maxImageWidth));
         if (mode === 'story') await publishStoryPhoto(rendered[0]!, profile.id);
-        else await publishPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''), spoiler);
+        else {
+          const postId = await publishPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''), spoiler);
+          if (compare && items.length === 2) await supabase.rpc('set_post_compare', { p_post_id: postId, p_on: true });
+        }
       }
       const wasVideo = items[0]!.kind === 'video';
       setItems([]);
       setCaption('');
       setSpoiler(false);
+      setCompare(false);
       setStep('select');
       router.navigate(wasVideo ? '/reels' : '/');
     } catch (e) {
@@ -285,6 +291,15 @@ export default function Create() {
                 <Text style={{ color: colors.textMuted, fontSize: 13 }}>People tap to reveal it. Use it for results, plot twists and surprises.</Text>
               </View>
               <Switch accessibilityLabel="Mark as spoiler" value={spoiler} onValueChange={setSpoiler} />
+            </View>
+          ) : null}
+          {mode === 'post' && items.length === 2 && items[0]?.kind !== 'video' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontWeight: '600' }}>Before and after</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>People drag a slider to compare your two photos. The first is the before.</Text>
+              </View>
+              <Switch accessibilityLabel="Before and after" value={compare} onValueChange={setCompare} />
             </View>
           ) : null}
           {mode === 'post' && items[0]?.kind !== 'video' ? (

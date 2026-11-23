@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import { Glass } from './Glass';
 import { SpoilerVeil } from './SpoilerVeil';
 import { tap } from '../lib/haptics';
+import { CompareSlider } from './CompareSlider';
 import { PostMenu } from './PostMenu';
 import { RichText } from './RichText';
 
@@ -34,6 +35,9 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   const [removed, setRemoved] = useState(false);
   const [spoiler, setSpoiler] = useState(post.is_spoiler);
   const [revealed, setRevealed] = useState(false);
+  const [compare, setCompare] = useState(post.is_compare);
+  const [series, setSeries] = useState(post.series);
+  const [credits, setCredits] = useState(post.post_credits ?? []);
   const images = postImages(post);
   const video = postVideo(post);
   // A video without a poster frame would show as a black box, so it starts playing, muted.
@@ -84,6 +88,10 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         caption={caption}
         commentsEnabled={commentsEnabled}
         spoiler={spoiler}
+        compare={compare}
+        imageCount={images.length}
+        series={series}
+        credits={credits}
         saved={saved}
         onSaved={() => setSaved(true)}
         visible={menu}
@@ -91,6 +99,9 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         onEdited={(patch) => {
           if (patch.caption !== undefined) setCaption(patch.caption);
           if (patch.commentsEnabled !== undefined) setCommentsEnabled(patch.commentsEnabled);
+          if (patch.compare !== undefined) setCompare(patch.compare);
+          if (patch.series !== undefined) setSeries(patch.series);
+          if (patch.credits !== undefined) setCredits(patch.credits);
           if (patch.spoiler !== undefined) {
             setSpoiler(patch.spoiler);
             setRevealed(false);
@@ -135,6 +146,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
             </View>
           </Pressable>
         )
+      ) : compare && images.length === 2 ? (
+        <CompareSlider before={images[0]!} after={images[1]!} label={`Before and after by ${username}`} />
       ) : images.length > 0 ? (
         <Carousel
           images={images}
@@ -184,8 +197,20 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         </Pressable>
       </View>
       <View style={{ paddingHorizontal: spacing.md, gap: 2 }}>
+        {series ? (
+          <Link href={{ pathname: '/series/[id]', params: { id: series.id } }} asChild>
+            <Text accessibilityRole="link" style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
+              Series · {series.title}
+            </Text>
+          </Link>
+        ) : null}
         {caption ? (
           <RichText lead={username} text={caption} style={{ color: colors.text, fontSize: fontSize.body }} />
+        ) : null}
+        {credits.length > 0 ? (
+          <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+            {[...credits].sort((a, b) => a.position - b.position).map((c) => `${c.role}: ${c.name}`).join('  ·  ')}
+          </Text>
         ) : null}
         {comments > 0 ? (
           <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>

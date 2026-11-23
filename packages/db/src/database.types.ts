@@ -652,6 +652,8 @@ export type Database = {
           caption: string | null
           comments_enabled: boolean
           is_spoiler: boolean
+          is_compare: boolean
+          series_id: string | null
           created_at: string
           deleted_at: string | null
           edited_at: string | null
@@ -666,6 +668,8 @@ export type Database = {
           caption?: string | null
           comments_enabled?: boolean
           is_spoiler?: boolean
+          is_compare?: boolean
+          series_id?: string | null
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
@@ -680,6 +684,8 @@ export type Database = {
           caption?: string | null
           comments_enabled?: boolean
           is_spoiler?: boolean
+          is_compare?: boolean
+          series_id?: string | null
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
@@ -931,6 +937,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      collections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      collection_posts: {
+        Row: {
+          added_at: string
+          collection_id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      series: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      post_credits: {
+        Row: {
+          name: string
+          position: number
+          post_id: string
+          role: string
+        }
+        Insert: {
+          name: string
+          position: number
+          post_id: string
+          role: string
+        }
+        Update: {
+          name?: string
+          position?: number
+          post_id?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      message_request_decisions: {
+        Row: {
+          decided_at: string
+          decision: string
+          other_id: string
+          user_id: string
+        }
+        Insert: {
+          decided_at?: string
+          decision: string
+          other_id: string
+          user_id: string
+        }
+        Update: {
+          decided_at?: string
+          decision?: string
+          other_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       saves: {
         Row: {
@@ -1187,6 +1319,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_collection: { Args: { p_name: string }; Returns: Database['public']['Tables']['collections']['Row'] }
+      set_collection_post: { Args: { p_collection_id: string; p_in: boolean; p_post_id: string }; Returns: undefined }
+      delete_collection: { Args: { p_collection_id: string }; Returns: undefined }
+      create_series: { Args: { p_title: string }; Returns: Database['public']['Tables']['series']['Row'] }
+      set_post_series: { Args: { p_post_id: string; p_series_id: string | null }; Returns: undefined }
+      set_post_credits: { Args: { p_credits: Json; p_post_id: string }; Returns: undefined }
+      set_post_compare: { Args: { p_on: boolean; p_post_id: string }; Returns: undefined }
+      decide_message_request: { Args: { p_accept: boolean; p_other: string }; Returns: undefined }
+      register_push_token: { Args: { p_platform: string; p_token: string }; Returns: undefined }
       set_save_note: { Args: { p_note: string; p_post_id: string }; Returns: undefined }
       save_post: { Args: { p_post_id: string }; Returns: undefined }
       unblock_user: { Args: { p_target: string }; Returns: undefined }
