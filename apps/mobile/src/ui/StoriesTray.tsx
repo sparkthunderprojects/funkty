@@ -5,6 +5,7 @@ import { publishStoryPhoto, pickImages, friendlyError } from '../lib/posts';
 import { useSession } from '../lib/session';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
+import { StoryRing } from './StoryRing';
 import { Avatar } from './Avatar';
 
 type Row = {
@@ -101,7 +102,7 @@ export function StoriesTray() {
         onPress={() => (mine.has ? router.push({ pathname: '/story/[username]', params: { username: profile.username } }) : addStory())}
         style={{ alignItems: 'center', width: size + 8 }}
       >
-        <View style={{ padding: 3, borderRadius: size, borderWidth: mine.has ? 2.5 : 0, borderColor: colors.primary }}>
+        <StoryRing size={size - 6} state={mine.has ? 'unseen' : 'none'}>
           <Avatar username={profile.username} storageKey={mine.avatar} size={size - 6} />
           {!mine.has ? (
             <Pressable
@@ -124,7 +125,7 @@ export function StoriesTray() {
               <Text style={{ color: colors.onPrimary, fontWeight: '800', fontSize: 14, lineHeight: 16 }}>+</Text>
             </Pressable>
           ) : null}
-        </View>
+        </StoryRing>
         <Text numberOfLines={1} style={{ color: colors.text, fontSize: fontSize.caption, marginTop: 4 }}>
           {busy ? 'Sharing…' : 'Your story'}
         </Text>
@@ -137,9 +138,9 @@ export function StoriesTray() {
           onPress={() => router.push({ pathname: '/story/[username]', params: { username: r.username } })}
           style={{ alignItems: 'center', width: size + 8 }}
         >
-          <View style={{ padding: 3, borderRadius: size, borderWidth: 2.5, borderColor: r.seen ? colors.border : colors.primary }}>
+          <StoryRing size={size - 6} state={r.seen ? 'seen' : 'unseen'}>
             <Avatar username={r.username} storageKey={r.avatar} size={size - 6} />
-          </View>
+          </StoryRing>
           <Text numberOfLines={1} style={{ color: r.seen ? colors.textMuted : colors.text, fontSize: fontSize.caption, marginTop: 4 }}>
             {r.username}
           </Text>
