@@ -1,0 +1,52 @@
+name: Publish mobile preview
+
+# Publishes the native app to Expo so it opens in Expo Go on a phone.
+# Needs a repository secret named EXPO_TOKEN (an Expo access token). Skips quietly without it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+      - ".github/workflows/mobile-preview.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-preview
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN is not set; skipping publish."
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+      - uses: actions/checkout@v4
+        if: env.SKIP != '1'
+      - uses: pnpm/action-setup@v4
+        if: env.SKIP != '1'
+      - uses: actions/setup-node@v4
+        if: env.SKIP != '1'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: env.SKIP != '1'
+      - name: Link the Expo project (first run creates it)
+        if: env.SKIP != '1'
+        working-directory: apps/mobile
+        run: npx --yes eas-cli@latest init --non-interactive --force
+      - name: Publish update
+        if: env.SKIP != '1'
+        working-directory: apps/mobile
+        run: |
+          npx --yes eas-cli@latest update --branch preview \
+            --message "${GITHUB_SHA::7}" --non-interactive
