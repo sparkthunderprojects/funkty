@@ -10,6 +10,7 @@ import { Avatar } from './Avatar';
 import { Carousel } from './Carousel';
 import { Clip } from './Clip';
 import { Image } from 'expo-image';
+import { Glass } from './Glass';
 import { PostMenu } from './PostMenu';
 import { RichText } from './RichText';
 
@@ -102,9 +103,11 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
               accessibilityLabel={muted ? 'Unmute' : 'Mute'}
               onPress={() => setMuted((m) => !m)}
               hitSlop={8}
-              style={{ position: 'absolute', right: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 14, padding: 6 }}
+              style={{ position: 'absolute', right: 10, bottom: 10 }}
             >
-              <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={16} color="#fff" />
+              <Glass padding={7} intensity={30}>
+                <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={16} color="#fff" />
+              </Glass>
             </Pressable>
           </View>
         ) : (

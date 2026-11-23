@@ -9,6 +9,7 @@ import { shareLink } from '../../src/lib/share';
 import { loadMuted } from '../../src/lib/mutes';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
+import { Glass } from '../../src/ui/Glass';
 import { Avatar } from '../../src/ui/Avatar';
 import { Clip } from '../../src/ui/Clip';
 import { RichText } from '../../src/ui/RichText';
@@ -67,7 +68,9 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
       ) : video.poster ? (
         <Image source={{ uri: video.poster }} contentFit="cover" style={{ width: '100%', height }} />
       ) : null}
-      <View pointerEvents="box-none" style={{ position: 'absolute', right: 12, bottom: 28, gap: 22, alignItems: 'center' }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom: 28 }}>
+        <Glass radius={30} padding={10} intensity={35} style={{ width: 58 }}>
+        <View style={{ gap: 20, alignItems: 'center' }}>
         <Pressable accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'} onPress={toggleLike} style={rail}>
           <Ionicons name={liked ? 'heart' : 'heart-outline'} size={32} color={liked ? colors.danger : '#fff'} />
           <Text style={count}>{likes}</Text>
@@ -82,6 +85,8 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
         <Pressable accessibilityRole="button" accessibilityLabel={saved ? 'Remove from saved' : 'Save'} onPress={toggleSave} style={rail}>
           <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={28} color="#fff" />
         </Pressable>
+        </View>
+        </Glass>
       </View>
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 80, bottom: 28, gap: 8 }}>
         <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
@@ -97,9 +102,11 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
         accessibilityLabel={muted ? 'Unmute' : 'Mute'}
         onPress={onToggleMute}
         hitSlop={8}
-        style={{ position: 'absolute', right: 14, top: 14, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16, padding: 8 }}
+        style={{ position: 'absolute', right: 14, top: 14 }}
       >
-        <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={18} color="#fff" />
+        <Glass padding={8} intensity={35}>
+          <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={18} color="#fff" />
+        </Glass>
       </Pressable>
     </View>
   );

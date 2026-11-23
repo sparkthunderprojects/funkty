@@ -1,3 +1,4 @@
+import { Glass } from './Glass';
 import { Image } from 'expo-image';
 import { useRef, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
@@ -47,20 +48,12 @@ export function Carousel({ images, label, onDoubleTap }: Props) {
       ) : null}
       {images.length > 1 ? (
         <>
-          <View
-            style={{
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              borderRadius: 12,
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-            }}
-          >
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-              {index + 1}/{images.length}
-            </Text>
+          <View pointerEvents="none" style={{ position: 'absolute', top: 10, right: 10 }}>
+            <Glass padding={0} intensity={30} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
+                {index + 1}/{images.length}
+              </Text>
+            </Glass>
           </View>
           <View style={{ position: 'absolute', bottom: 8, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 }}>
             {images.map((_, i) => (
