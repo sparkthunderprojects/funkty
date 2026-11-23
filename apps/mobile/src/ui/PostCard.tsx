@@ -78,8 +78,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
 
   if (removed) return null;
   return (
-    <View style={{ gap: spacing.sm, padding: 12, marginHorizontal: spacing.md, backgroundColor: colors.card, borderRadius: 28, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ gap: spacing.sm, paddingVertical: 12, backgroundColor: colors.card, borderRadius: 28, overflow: 'hidden' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
         <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
           <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
             <RingAvatar username={username} storageKey={post.profiles?.avatar?.storage_key} size={48} />
@@ -129,7 +129,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         onDeleted={() => (onDeleted ? onDeleted() : setRemoved(true))}
         onMuted={() => (onDeleted ? onDeleted() : setRemoved(true))}
       />
-      <View style={{ borderRadius: 20, overflow: 'hidden' }}>
+      <View style={{ overflow: 'hidden' }}>
       {video ? (
         playing ? (
           <View>
@@ -178,7 +178,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
       ) : null}
         {spoiler && !revealed ? <SpoilerVeil onReveal={() => setRevealed(true)} /> : null}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: 12 }}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={liked ? 'Unlike' : 'Like'}
@@ -215,7 +215,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color={colors.text} />
         </Pressable>
       </View>
-      <View style={{ paddingHorizontal: 2, gap: 2 }}>
+      <View style={{ paddingHorizontal: 12, gap: 2 }}>
         {series ? (
           <Link href={{ pathname: '/series/[id]', params: { id: series.id } }} asChild>
             <Text accessibilityRole="link" style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
