@@ -137,7 +137,7 @@ export default function Home() {
           <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
           {unreadDms > 0 ? (
             <View style={{ position: 'absolute', top: -6, right: -8, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
-              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadDms}</Text>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadDms > 9 ? '9+' : unreadDms}</Text>
             </View>
           ) : null}
         </Pressable>

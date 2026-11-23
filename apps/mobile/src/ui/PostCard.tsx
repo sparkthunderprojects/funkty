@@ -40,6 +40,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   const [compare, setCompare] = useState(post.is_compare);
   const [series, setSeries] = useState(post.series);
   const [credits, setCredits] = useState(post.post_credits ?? []);
+  const [edited, setEdited] = useState(!!post.edited_at);
   const [pinned, setPinned] = useState(!!post.pinned_at);
   const [hideLikes, setHideLikes] = useState(post.hide_like_count);
   const [tags, setTags] = useState(post.post_tags ?? []);
@@ -118,7 +119,10 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         visible={menu}
         onClose={() => setMenu(false)}
         onEdited={(patch) => {
-          if (patch.caption !== undefined) setCaption(patch.caption);
+          if (patch.caption !== undefined) {
+            setCaption(patch.caption);
+            setEdited(true);
+          }
           if (patch.commentsEnabled !== undefined) setCommentsEnabled(patch.commentsEnabled);
           if (patch.compare !== undefined) setCompare(patch.compare);
           if (patch.series !== undefined) setSeries(patch.series);
@@ -244,6 +248,11 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
               See all {updates.length} updates
             </Text>
           </Link>
+        ) : null}
+        {pinned || edited ? (
+          <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+            {[pinned ? 'Pinned' : null, edited ? 'Edited' : null].filter(Boolean).join(' · ')}
+          </Text>
         ) : null}
         {shownTags.length > 0 ? (
           <Text style={{ color: colors.textMuted, fontSize: 12 }}>

@@ -17,6 +17,7 @@ import {
   publishVideo,
 } from '../../src/lib/posts';
 import { supabase } from '../../src/lib/supabase';
+import { CharCount } from '../../src/ui/CharCount';
 import { useSession } from '../../src/lib/session';
 import { useTheme } from '../../src/theme';
 import { Clip } from '../../src/ui/Clip';
@@ -284,6 +285,7 @@ export default function Create() {
               <Text style={{ flex: 1, color: colors.textMuted, fontSize: 14 }}>Your story disappears after 24 hours.</Text>
             )}
           </View>
+          {mode !== 'story' ? <CharCount value={caption} max={2200} /> : null}
           {mode !== 'story' ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
               <View style={{ flex: 1 }}>

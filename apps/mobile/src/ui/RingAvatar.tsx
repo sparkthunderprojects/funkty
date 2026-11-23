@@ -5,7 +5,7 @@ import { mediaUrl } from '../lib/posts';
 import { useTheme } from '../theme';
 
 /** Profile photo as a rounded square inside a gradient ring. */
-export function RingAvatar({ username, storageKey, size = 96, onPress }: { username: string; storageKey?: string | null; size?: number; onPress?: () => void }) {
+export function RingAvatar({ username, storageKey, size = 96, onPress, onLongPress, seen }: { username: string; storageKey?: string | null; size?: number; onPress?: () => void; onLongPress?: () => void; seen?: boolean }) {
   const { colors } = useTheme();
   const ring = size >= 80 ? 4 : 2.5;
   const gap = size >= 80 ? 3 : 2;
@@ -13,7 +13,7 @@ export function RingAvatar({ username, storageKey, size = 96, onPress }: { usern
   const outerRadius = size * 0.3;
   const ringed = (
     <LinearGradient
-      colors={['#7C3AED', '#F43F5E', '#FBBF24']}
+      colors={seen ? [colors.border, colors.border, colors.border] : ['#7C3AED', '#F43F5E', '#FBBF24']}
       start={{ x: 0, y: 1 }}
       end={{ x: 1, y: 0 }}
       style={{ width: size, height: size, borderRadius: outerRadius, padding: ring }}
@@ -37,9 +37,16 @@ export function RingAvatar({ username, storageKey, size = 96, onPress }: { usern
       </View>
     </LinearGradient>
   );
-  if (!onPress) return ringed;
+  if (!onPress && !onLongPress) return ringed;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`View ${username}'s story`} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={onPress ? `View ${username}'s story` : `Enlarge ${username}'s photo`}
+      accessibilityHint={onPress && onLongPress ? 'Press and hold to enlarge the photo' : undefined}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={350}
+    >
       {ringed}
     </Pressable>
   );

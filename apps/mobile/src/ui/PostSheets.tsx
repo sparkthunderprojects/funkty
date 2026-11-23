@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { friendlyError } from '../lib/posts';
 import { useSession } from '../lib/session';
+import { tap } from '../lib/haptics';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 
@@ -93,6 +94,7 @@ export function CollectionSheet({ postId, visible, onClose, onSaved }: SheetProp
   }, [visible, load]);
 
   async function toggle(id: string) {
+    tap();
     const next = !member.has(id);
     const { error: e } = await supabase.rpc('set_collection_post', { p_collection_id: id, p_post_id: postId, p_in: next });
     if (e) return setError(friendlyError(e.message));

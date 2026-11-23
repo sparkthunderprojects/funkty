@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { loadMuted } from '../lib/mutes';
 import { useSession } from '../lib/session';
+import { tap } from '../lib/haptics';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 import { Avatar } from './Avatar';
@@ -44,6 +45,7 @@ export function SuggestedPeople() {
   }, [load]);
 
   async function follow(id: string) {
+    tap();
     const { data, error } = await supabase.rpc('follow_user', { p_target: id });
     if (!error && (data === 'active' || data === 'pending')) setState((s) => ({ ...s, [id]: data }));
   }

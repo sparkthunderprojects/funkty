@@ -9,7 +9,7 @@ import { useTheme } from '../theme';
 type Item = { id: string; title: string; cover: { storage_key: string } | null };
 
 /** Row of rounded highlight tiles under the bio. Renders nothing when there are none. */
-export function Highlights({ ownerId }: { ownerId: string }) {
+export function Highlights({ ownerId, own }: { ownerId: string; own?: boolean }) {
   const { colors, spacing } = useTheme();
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
@@ -26,7 +26,14 @@ export function Highlights({ ownerId }: { ownerId: string }) {
     }, [ownerId]),
   );
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    if (!own) return null;
+    return (
+      <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: spacing.sm }}>
+        Keep your best stories on your profile: open one of your stories and tap Highlight.
+      </Text>
+    );
+  }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: spacing.md, paddingHorizontal: spacing.sm }}>
       {items.map((h) => (

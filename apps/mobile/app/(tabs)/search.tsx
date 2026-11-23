@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { addRecent, clearRecent, loadRecent, removeRecent } from '../../src/lib/recent';
@@ -43,8 +43,8 @@ export default function Search() {
   };
 
   // Explore: ranked by engagement and freshness on the server. Falls back to the latest posts when nothing ranks.
-  useEffect(() => {
-    void (async () => {
+  const loadExplore = useCallback(async () => {
+    {
       const ranked = await supabase.rpc('explore_posts', { p_limit: 60 });
       const ids = (ranked.data ?? []).map((r) => r.post_id);
       if (ids.length > 0) {
@@ -53,10 +53,19 @@ export default function Search() {
         setExplore(ids.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : [])));
         return;
       }
-      const { data } = await supabase.from('posts').select(feedSelect).order('id', { ascending: false }).limit(60);
+      const { data } = await supabase.from('posts').select(feedSelect).is('archived_at', null).order('id', { ascending: false }).limit(60);
       setExplore((data ?? []) as unknown as FeedPost[]);
-    })();
+    }
   }, []);
+  useEffect(() => {
+    void loadExplore();
+  }, [loadExplore]);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshExplore = async () => {
+    setRefreshing(true);
+    await loadExplore();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (!active) {
@@ -214,7 +223,11 @@ export default function Search() {
           )}
         </>
       ) : (
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: tabSpace }}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: tabSpace }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshExplore} tintColor={colors.primary} />}
+        >
           {recent.length > 0 ? (
             <View style={{ paddingBottom: spacing.sm }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>

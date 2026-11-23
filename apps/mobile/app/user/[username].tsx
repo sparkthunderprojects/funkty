@@ -2,9 +2,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
+import { tap } from '../../src/lib/haptics';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
+import { PhotoViewer } from '../../src/ui/PhotoViewer';
 import { Highlights } from '../../src/ui/Highlights';
 import { ProfileLines } from '../../src/ui/ProfileLines';
 import { ProfileBanner, RingAvatar } from '../../src/ui/RingAvatar';
@@ -35,6 +37,7 @@ export default function UserProfile() {
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [hasStory, setHasStory] = useState(false);
+  const [enlarge, setEnlarge] = useState(false);
   const [tagged, setTagged] = useState<FeedPost[]>([]);
   const [tab, setTab] = useState<ProfileTab>('posts');
   const [follow, setFollow] = useState<Follow>('none');
@@ -75,6 +78,7 @@ export default function UserProfile() {
   async function toggleFollow() {
     if (!person) return;
     setBusy(true);
+    tap();
     await supabase.rpc(follow === 'none' ? 'follow_user' : 'unfollow_user', { p_target: person.id });
     await load();
     setBusy(false);
@@ -117,6 +121,7 @@ export default function UserProfile() {
             username={person.username}
             storageKey={person.avatar?.storage_key}
             size={104}
+            onLongPress={() => setEnlarge(true)}
             onPress={hasStory ? () => router.push({ pathname: '/story/[username]', params: { username: person.username } }) : undefined}
           />
           <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around', paddingBottom: 4 }}>
@@ -134,6 +139,7 @@ export default function UserProfile() {
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>@{person.username}</Text>
         {person.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body, marginTop: 4 }}>{person.bio}</Text> : null}
       </View>
+      <PhotoViewer storageKey={person.avatar?.storage_key} username={person.username} visible={enlarge} onClose={() => setEnlarge(false)} />
       <ProfileLines location={person.location} website={person.website} />
       <Highlights ownerId={person.id} />
       {isMe ? (

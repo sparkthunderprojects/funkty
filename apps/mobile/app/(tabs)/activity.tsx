@@ -3,6 +3,7 @@ import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { mediaUrl, timeAgo } from '../../src/lib/posts';
+import { tap } from '../../src/lib/haptics';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTabBarSpace } from '../../src/ui/layout';
@@ -64,11 +65,13 @@ export default function Activity() {
   );
 
   async function respond(n: Notice, accept: boolean) {
+    tap();
     await supabase.rpc(accept ? 'accept_follow_request' : 'reject_follow_request', { p_follower: n.actor_id });
     void load();
   }
 
   async function respondTag(n: Notice, accept: boolean) {
+    tap();
     if (!n.post_id) return;
     await supabase.rpc('respond_tag', { p_post_id: n.post_id, p_accept: accept });
     void load();

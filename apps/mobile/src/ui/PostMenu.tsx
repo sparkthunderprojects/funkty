@@ -3,9 +3,12 @@ import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type FeedPost, friendlyError } from '../lib/posts';
 import { useSession } from '../lib/session';
-import { shareLink } from '../lib/share';
+import * as Clipboard from 'expo-clipboard';
+import { appLink, shareLink } from '../lib/share';
+import { tap } from '../lib/haptics';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
+import { CharCount } from './CharCount';
 import { ActionSheet, type SheetAction } from './ActionSheet';
 import { TagSheet } from './TagSheet';
 import { CollectionSheet, CreditsSheet, SeriesSheet } from './PostSheets';
@@ -51,7 +54,7 @@ type Props = {
   onMuted?: () => void;
 };
 
-type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'tags' | 'thanks';
+type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'tags' | 'copied' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
 export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, pinned, hideLikes, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
@@ -62,6 +65,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [updateText, setUpdateText] = useState('');
+  const [inCollections, setInCollections] = useState<string[]>([]);
   const mine = profile?.id === post.author_id;
   const username = post.profiles?.username ?? 'unknown';
 
@@ -88,7 +92,15 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
       .eq('user_id', profile.id)
       .maybeSingle()
       .then(({ data }) => setNote(data?.note ?? ''));
-  }, [visible, post.id, profile]);
+    supabase
+      .from('collection_posts')
+      .select('collections(name)')
+      .eq('user_id', profile.id)
+      .eq('post_id', post.id)
+      .then(({ data }) =>
+        setInCollections(((data ?? []) as unknown as { collections: { name: string } | null }[]).flatMap((r) => (r.collections ? [r.collections.name] : []))),
+      );
+  }, [visible, post.id, profile, saved]);
 
   async function postUpdate() {
     const { data, error: e } = await supabase.rpc('add_post_update', { p_post_id: post.id, p_body: updateText });
@@ -111,18 +123,27 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   }
 
   async function toggleComments() {
+    tap();
     const next = !commentsEnabled;
     const { error: e } = await supabase.rpc('edit_post', { p_post_id: post.id, p_caption: currentCaption ?? '', p_comments_enabled: next });
     if (!e) onEdited({ commentsEnabled: next });
   }
 
+  async function copyLink() {
+    await Clipboard.setStringAsync(appLink(`/post/${post.id}`));
+    tap();
+    setPanel('copied');
+  }
+
   async function toggleSpoiler() {
+    tap();
     const next = !spoiler;
     const { error: e } = await supabase.rpc('edit_post', { p_post_id: post.id, p_caption: currentCaption ?? '', p_is_spoiler: next });
     if (!e) onEdited({ spoiler: next });
   }
 
   async function toggleCompare() {
+    tap();
     const next = !compare;
     const { error: e } = await supabase.rpc('set_post_compare', { p_post_id: post.id, p_on: next });
     if (!e) onEdited({ compare: next });
@@ -135,6 +156,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   }
 
   async function togglePin() {
+    tap();
     const next = !pinned;
     const { error: e } = await supabase.rpc('set_post_pinned', { p_post_id: post.id, p_on: next });
     if (e) return setError(friendlyError(e.message));
@@ -142,12 +164,14 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   }
 
   async function toggleHideLikes() {
+    tap();
     const next = !hideLikes;
     const { error: e } = await supabase.rpc('set_post_hide_likes', { p_post_id: post.id, p_on: next });
     if (!e) onEdited({ hideLikes: next });
   }
 
   async function archive() {
+    tap();
     const { error: e } = await supabase.rpc('set_post_archived', { p_post_id: post.id, p_on: true });
     if (e) return setError(friendlyError(e.message));
     close();
@@ -197,6 +221,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
             placeholderTextColor={colors.textMuted}
             style={{ color: colors.text, fontSize: 16, padding: spacing.md, minHeight: 120, textAlignVertical: 'top', outlineStyle: 'none' } as never}
           />
+          <View style={{ paddingHorizontal: spacing.md }}><CharCount value={caption} max={2200} /></View>
           {error ? <Text style={{ color: colors.danger, paddingHorizontal: spacing.md }}>{error}</Text> : null}
         </SafeAreaView>
       </Modal>
@@ -244,6 +269,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
             placeholderTextColor={colors.textMuted}
             style={{ color: colors.text, fontSize: 16, padding: spacing.md, minHeight: 120, textAlignVertical: 'top', outlineStyle: 'none' } as never}
           />
+          <View style={{ paddingHorizontal: spacing.md }}><CharCount value={updateText} max={500} /></View>
           {error ? <Text style={{ color: colors.danger, paddingHorizontal: spacing.md }}>{error}</Text> : null}
         </SafeAreaView>
       </Modal>
@@ -277,6 +303,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
             placeholderTextColor={colors.textMuted}
             style={{ color: colors.text, fontSize: 16, padding: spacing.md, minHeight: 120, textAlignVertical: 'top', outlineStyle: 'none' } as never}
           />
+          <View style={{ paddingHorizontal: spacing.md }}><CharCount value={note} max={500} /></View>
           {error ? <Text style={{ color: colors.danger, paddingHorizontal: spacing.md }}>{error}</Text> : null}
         </SafeAreaView>
       </Modal>
@@ -289,6 +316,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     fn();
   };
   const share = then(() => void shareLink(`${username} on Funkty`, `/post/${post.id}`));
+  const saveLabel = saved ? (inCollections.length > 0 ? `Saved to ${inCollections.join(', ')}` : 'Saved. Add to a collection') : 'Save to collection';
   const actions: SheetAction[] =
     panel === 'confirm-delete'
       ? [
@@ -300,6 +328,8 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
         ? [{ label: 'Why are you reporting this?', onPress: () => undefined }, ...reportReasons.map(([code, label]): SheetAction => ({ label, onPress: () => void report(code) }))]
         : panel === 'thanks'
           ? [{ label: 'Thanks. We will review this post.', onPress: close }]
+          : panel === 'copied'
+            ? [{ label: 'Link copied', onPress: close }]
           : mine
             ? [
                 { label: 'Edit caption', onPress: () => { setCaption(currentCaption ?? ''); setPanel('edit'); } },
@@ -313,16 +343,18 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: series ? `Series: ${series.title}` : 'Add to a series', onPress: () => setPanel('series') },
                 { label: credits.length ? 'Edit credits' : 'Add credits', onPress: () => setPanel('credits') },
                 ...(imageCount === 2 ? [{ label: compare ? 'Show as normal photos' : 'Show as before and after', onPress: then(() => void toggleCompare()) }] : []),
-                { label: 'Save to collection', onPress: () => setPanel('collections') },
+                { label: saveLabel, onPress: () => setPanel('collections') },
                 { label: 'Share', onPress: share },
+                { label: 'Copy link', onPress: () => void copyLink() },
                 { label: 'Archive', onPress: then(() => void archive()) },
                 { label: 'Delete', onPress: () => setPanel('confirm-delete'), destructive: true },
               ]
             : [
                 ...(myTag ? [{ label: 'Remove me from this post', onPress: then(() => void removeMyTag()) }] : []),
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
-                { label: 'Save to collection', onPress: () => setPanel('collections') },
+                { label: saveLabel, onPress: () => setPanel('collections') },
                 { label: 'Share', onPress: share },
+                { label: 'Copy link', onPress: () => void copyLink() },
                 { label: `Mute ${post.profiles?.username ?? 'account'}`, onPress: () => void mute() },
                 { label: 'Report', onPress: () => setPanel('report'), destructive: true },
               ];

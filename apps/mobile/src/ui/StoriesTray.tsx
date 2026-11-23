@@ -146,8 +146,8 @@ export function StoriesTray() {
           style={{ alignItems: 'center', width: w }}
         >
           {card(r.cover ?? r.avatar, r.username)}
-          <View style={{ position: 'absolute', left: 0, right: 0, top: h - 52, alignItems: 'center', opacity: r.seen ? 0.7 : 1 }}>
-            <RingAvatar username={r.username} storageKey={r.avatar} size={44} />
+          <View style={{ position: 'absolute', left: 0, right: 0, top: h - 52, alignItems: 'center' }}>
+            <RingAvatar username={r.username} storageKey={r.avatar} size={44} seen={r.seen} />
           </View>
           <Text numberOfLines={1} style={{ color: r.seen ? colors.textMuted : colors.text, fontSize: fontSize.body, marginTop: 6 }}>
             {r.username}

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
 import { type FeedPost, feedSelect, postVideo } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { shareLink } from '../../src/lib/share';
@@ -138,30 +138,38 @@ export default function Reels() {
   });
   const config = useRef({ itemVisiblePercentThreshold: 80 });
 
+  const loadReels = useCallback(async () => {
+    if (!profile) return;
+    const { data } = await supabase.from('posts').select(feedSelect).eq('kind', 'video').is('archived_at', null).order('id', { ascending: false }).limit(30);
+    const muted = await loadMuted(profile.id);
+    const rows = ((data ?? []) as unknown as FeedPost[]).filter((r) => !muted.has(r.author_id));
+    setPosts(rows);
+    if (rows.length > 0) {
+      const ids = rows.map((r) => r.id);
+      const [likes, saves] = await Promise.all([
+        supabase.from('likes').select('post_id').eq('user_id', profile.id).in('post_id', ids),
+        supabase.from('saves').select('post_id').eq('user_id', profile.id).in('post_id', ids),
+      ]);
+      setLiked(new Set((likes.data ?? []).map((l) => l.post_id)));
+      setSaved(new Set((saves.data ?? []).map((l) => l.post_id)));
+      setActiveId((current) => current ?? rows[0]!.id);
+    }
+    setLoading(false);
+  }, [profile]);
+
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
-      if (!profile) return () => setFocused(false);
-      void (async () => {
-        const { data } = await supabase.from('posts').select(feedSelect).eq('kind', 'video').order('id', { ascending: false }).limit(30);
-        const muted = await loadMuted(profile.id);
-        const rows = ((data ?? []) as unknown as FeedPost[]).filter((r) => !muted.has(r.author_id));
-        setPosts(rows);
-        if (rows.length > 0) {
-          const ids = rows.map((r) => r.id);
-          const [likes, saves] = await Promise.all([
-            supabase.from('likes').select('post_id').eq('user_id', profile.id).in('post_id', ids),
-            supabase.from('saves').select('post_id').eq('user_id', profile.id).in('post_id', ids),
-          ]);
-          setLiked(new Set((likes.data ?? []).map((l) => l.post_id)));
-          setSaved(new Set((saves.data ?? []).map((l) => l.post_id)));
-          setActiveId((current) => current ?? rows[0]!.id);
-        }
-        setLoading(false);
-      })();
+      void loadReels();
       return () => setFocused(false);
-    }, [profile]),
+    }, [loadReels]),
   );
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = async () => {
+    setRefreshing(true);
+    await loadReels();
+    setRefreshing(false);
+  };
 
   const activeIndex = posts.findIndex((p) => p.id === activeId);
   return (
@@ -179,6 +187,7 @@ export default function Reels() {
           data={posts}
           keyExtractor={(p) => p.id}
           pagingEnabled
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#fff" />}
           snapToInterval={height}
           decelerationRate="fast"
           showsVerticalScrollIndicator={false}

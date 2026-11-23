@@ -1,11 +1,11 @@
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { useTabBarSpace } from './layout';
 
-type Props = { children: React.ReactNode; scroll?: boolean; /** Leave room for the floating tab bar. */ tabs?: boolean };
+type Props = { children: React.ReactNode; scroll?: boolean; refreshing?: boolean; onRefresh?: () => void; /** Leave room for the floating tab bar. */ tabs?: boolean };
 
-export function Screen({ children, scroll, tabs }: Props) {
+export function Screen({ children, scroll, tabs, refreshing, onRefresh }: Props) {
   const { colors, spacing } = useTheme();
   const space = useTabBarSpace();
   const content = { padding: spacing.lg, paddingBottom: tabs ? space : spacing.lg, gap: spacing.md, flexGrow: 1 } as const;
@@ -13,10 +13,15 @@ export function Screen({ children, scroll, tabs }: Props) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // 'padding' on both platforms: Android draws edge to edge, so the window no longer resizes for the keyboard.
+        behavior="padding"
       >
         {scroll ? (
-          <ScrollView contentContainerStyle={content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={content}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.primary} /> : undefined}
+          >
             {children}
           </ScrollView>
         ) : (

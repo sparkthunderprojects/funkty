@@ -6,6 +6,7 @@ import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
+import { PhotoViewer } from '../../src/ui/PhotoViewer';
 import { Highlights } from '../../src/ui/Highlights';
 import { ProfileLines } from '../../src/ui/ProfileLines';
 import { ProfileBanner, RingAvatar } from '../../src/ui/RingAvatar';
@@ -20,6 +21,9 @@ import { Screen } from '../../src/ui/Screen';
 type Stats = { posts: number; followers: number; following: number };
 type Tab = ProfileTab;
 
+/** The tab you were last on, kept while the app stays open. */
+let lastTab: Tab = 'posts';
+
 export default function Profile() {
   const { profile, signOut } = useSession();
   const { colors, fontSize, spacing } = useTheme();
@@ -30,12 +34,16 @@ export default function Profile() {
   const [tagged, setTagged] = useState<FeedPost[]>([]);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [cover, setCover] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('posts');
+  const [tab, setTabState] = useState<Tab>(lastTab);
+  const setTab = (t: Tab) => {
+    lastTab = t;
+    setTabState(t);
+  };
   const [menu, setMenu] = useState(false);
   const [hasStory, setHasStory] = useState(false);
+  const [enlarge, setEnlarge] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
+  const loadProfile = useCallback(() => {
       if (!profile) return;
       supabase
         .from('profile_stats')
@@ -93,8 +101,19 @@ export default function Profile() {
           setAvatar(d?.avatar?.storage_key ?? null);
           setCover(d?.cover?.storage_key ?? null);
         });
-    }, [profile]),
+  }, [profile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile]),
   );
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = () => {
+    setRefreshing(true);
+    loadProfile();
+    setTimeout(() => setRefreshing(false), 900);
+  };
 
   if (!profile) return null;
   const shown = tab === 'posts' ? posts : tab === 'reels' ? posts.filter((p) => p.kind === 'video') : tab === 'tagged' ? tagged : saved;
@@ -104,7 +123,7 @@ export default function Profile() {
     ['Following', stats?.following, () => router.push({ pathname: '/connections/[username]', params: { username: profile.username, type: 'following' } })],
   ];
   return (
-    <Screen scroll tabs>
+    <Screen scroll tabs refreshing={refreshing} onRefresh={refresh}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
           <Wordmark height={30} />
@@ -133,6 +152,7 @@ export default function Profile() {
             username={profile.username}
             storageKey={avatar}
             size={104}
+            onLongPress={() => setEnlarge(true)}
             onPress={hasStory ? () => router.push({ pathname: '/story/[username]', params: { username: profile.username } }) : undefined}
           />
           <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around', paddingBottom: 4 }}>
@@ -150,8 +170,9 @@ export default function Profile() {
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>@{profile.username}</Text>
         {profile.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body, marginTop: 4 }}>{profile.bio}</Text> : null}
       </View>
+      <PhotoViewer storageKey={avatar} username={profile.username} visible={enlarge} onClose={() => setEnlarge(false)} />
       <ProfileLines location={profile.location} website={profile.website} />
-      <Highlights ownerId={profile.id} />
+      <Highlights ownerId={profile.id} own />
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
           <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} compact />
@@ -167,7 +188,7 @@ export default function Profile() {
         </View>
       ) : (
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
-          {tab === 'posts' ? 'No posts yet. Tap + to share your first photo.' : tab === 'reels' ? 'Videos you share appear here.' : tab === 'tagged' ? 'Posts you are tagged in, once you approve them, appear here.' : 'Posts you save appear here, only visible to you.'}
+          {tab === 'posts' ? 'No posts yet. Tap + to share your first photo.' : tab === 'reels' ? 'Videos you share appear here.' : tab === 'tagged' ? 'Nothing here yet. When someone tags you and you approve it, the post shows up here.' : 'Posts you save appear here, only visible to you.'}
         </Text>
       )}
     </Screen>

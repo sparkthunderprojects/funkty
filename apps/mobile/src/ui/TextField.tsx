@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 import { useTheme } from '../theme';
+import { CharCount } from './CharCount';
 
 type Props = TextInputProps & { label: string; error?: string | null };
 
@@ -27,6 +28,7 @@ export function TextField({ label, error, style, ...input }: Props) {
           style,
         ]}
       />
+      {input.maxLength && typeof input.value === 'string' ? <CharCount value={input.value} max={input.maxLength} /> : null}
       {error ? (
         <Text style={{ color: colors.danger, fontSize: fontSize.caption }}>{error}</Text>
       ) : null}

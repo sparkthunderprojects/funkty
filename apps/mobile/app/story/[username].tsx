@@ -8,6 +8,7 @@ import { mediaUrl, timeAgo } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { Avatar } from '../../src/ui/Avatar';
+import { ActionSheet } from '../../src/ui/ActionSheet';
 import { HighlightSheet } from '../../src/ui/HighlightSheet';
 import { StoryViewers } from '../../src/ui/StoryViewers';
 
@@ -28,6 +29,7 @@ export default function StoryViewer() {
   const [progress, setProgress] = useState(0);
   const [showViewers, setShowViewers] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const started = useRef(0);
   const progressRef = useRef(0);
 
@@ -87,7 +89,7 @@ export default function StoryViewer() {
 
   // Auto-advance with a progress bar. Pauses while the viewers list is open.
   useEffect(() => {
-    if (!current || showViewers || showHighlight) return;
+    if (!current || showViewers || showHighlight || showMenu) return;
     started.current = Date.now() - progressRef.current * durationMs;
     const tick = setInterval(() => {
       const p = Math.min(1, (Date.now() - started.current) / durationMs);
@@ -99,7 +101,7 @@ export default function StoryViewer() {
       }
     }, 100);
     return () => clearInterval(tick);
-  }, [current, next, showViewers, showHighlight]);
+  }, [current, next, showViewers, showHighlight, showMenu]);
 
   async function remove() {
     if (!current) return;
@@ -168,6 +170,11 @@ export default function StoryViewer() {
           <Text style={{ color: '#fff', fontWeight: '700' }}>{username}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)' }}>{timeAgo(current.created_at)}</Text>
           <View style={{ flex: 1 }} />
+          {!isMine ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="More options" onPress={() => setShowMenu(true)} hitSlop={12} style={{ marginRight: 12 }}>
+              <Ionicons name="ellipsis-horizontal" size={24} color="#fff" />
+            </Pressable>
+          ) : null}
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="close" size={30} color="#fff" />
           </Pressable>
@@ -190,6 +197,21 @@ export default function StoryViewer() {
             </Text>
           </View>
         </SafeAreaView>
+      ) : null}
+      {!isMine && authorId ? (
+        <ActionSheet
+          visible={showMenu}
+          onClose={() => setShowMenu(false)}
+          actions={[
+            {
+              label: `Mute ${String(username)}`,
+              onPress: () => {
+                void supabase.rpc('mute_user', { p_target: authorId }).then(() => router.back());
+              },
+            },
+            { label: 'Cancel', onPress: () => undefined },
+          ]}
+        />
       ) : null}
       {isMine ? <HighlightSheet storyId={current.id} visible={showHighlight} onClose={() => setShowHighlight(false)} /> : null}
       {isMine ? <StoryViewers storyId={current.id} visible={showViewers} onClose={() => setShowViewers(false)} /> : null}
