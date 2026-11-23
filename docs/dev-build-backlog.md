@@ -59,7 +59,7 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 Buildable now (Expo Go + Supabase):
 - Not interested / Manage topics / Refresh my feed (feed controls).
 - Repost with a short note.
-- Playlists for reels (extend collections/series).
+- Invite friends (share sheet with a personal invite link) and Find friends (search, suggestions, optional contact matching).
 - Shared collections (invite friends to one saved collection).
 - Friends tab (posts from mutual follows).
 - Screen time: daily limit, break reminders, sleep reminder, weekly recap.
@@ -80,7 +80,7 @@ Needs server or safety groundwork first:
 - Shop and commerce.
 - AI features (captions, dubbing).
 
-Decided not to copy: TikTok Shop, Campus Hub, Nearby feed, AI dubbing.
+Decided not to build: playlists, sounds library and any music features (no music licensing, owner decision 2026-11-23). Decided not to copy: TikTok Shop, Campus Hub, Nearby feed, AI dubbing.
 
 ## Blocked on a decision
 
