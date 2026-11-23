@@ -40,13 +40,20 @@ export default function Search() {
     if (profile) addRecent(profile.id, value).then(setRecent);
   };
 
+  // Explore: ranked by engagement and freshness on the server. Falls back to the latest posts when nothing ranks.
   useEffect(() => {
-    supabase
-      .from('posts')
-      .select(feedSelect)
-      .order('id', { ascending: false })
-      .limit(60)
-      .then(({ data }) => setExplore((data ?? []) as unknown as FeedPost[]));
+    void (async () => {
+      const ranked = await supabase.rpc('explore_posts', { p_limit: 60 });
+      const ids = (ranked.data ?? []).map((r) => r.post_id);
+      if (ids.length > 0) {
+        const { data } = await supabase.from('posts').select(feedSelect).in('id', ids);
+        const byId = new Map(((data ?? []) as unknown as FeedPost[]).map((p) => [p.id, p]));
+        setExplore(ids.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : [])));
+        return;
+      }
+      const { data } = await supabase.from('posts').select(feedSelect).order('id', { ascending: false }).limit(60);
+      setExplore((data ?? []) as unknown as FeedPost[]);
+    })();
   }, []);
 
   useEffect(() => {

@@ -23,6 +23,7 @@ export type FeedPost = {
   is_compare: boolean;
   series: { id: string; title: string } | null;
   post_credits: { position: number; role: string; name: string }[];
+  post_updates: { id: string; body: string; created_at: string }[];
   caption: string | null;
   created_at: string;
   author_id: string;
@@ -41,7 +42,7 @@ export type FeedPost = {
   }[];
 };
 
-export const feedSelect = `id, kind, comments_enabled, is_spoiler, is_compare, caption, created_at, author_id, series(id, title), post_credits(position, role, name), profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
+export const feedSelect = `id, kind, comments_enabled, is_spoiler, is_compare, caption, created_at, author_id, series(id, title), post_credits(position, role, name), post_updates(id, body, created_at), profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
 export const authorSelect = `username, display_name, ${avatarEmbed}`;
 
 export function mediaUrl(storageKey: string): string {
@@ -100,6 +101,10 @@ export function friendlyError(message: string | undefined): string {
       return 'You already have one with that name.';
     case 'needs_two_images':
       return 'Before/after needs a post with exactly two photos.';
+    case 'invalid_body':
+      return 'Write something between 1 and 500 characters.';
+    case 'too_many_updates':
+      return 'A post can have up to 10 updates.';
     case 'invalid_credits':
       return 'Each credit needs a role and a name.';
     case 'too_many_collections':

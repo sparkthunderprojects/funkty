@@ -149,7 +149,7 @@ export default function PostDetail() {
   return (
     <Screen scroll>
       <View style={{ marginHorizontal: -spacing.lg }}>
-        <PostCard post={post} liked={liked} saved={saved} onDeleted={() => router.back()} />
+        <PostCard post={post} liked={liked} saved={saved} allUpdates onDeleted={() => router.back()} />
       </View>
       {note ? (
         <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: spacing.md, marginBottom: spacing.md }}>

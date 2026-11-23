@@ -39,12 +39,13 @@ type Props = {
     compare?: boolean;
     series?: { id: string; title: string } | null;
     credits?: { position: number; role: string; name: string }[];
+    addedUpdate?: { id: string; body: string; created_at: string };
   }) => void;
   onDeleted: () => void;
   onMuted?: () => void;
 };
 
-type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'thanks';
+type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
 export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
@@ -54,6 +55,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   const [caption, setCaption] = useState(currentCaption ?? '');
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  const [updateText, setUpdateText] = useState('');
   const mine = profile?.id === post.author_id;
   const username = post.profiles?.username ?? 'unknown';
 
@@ -81,6 +83,14 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
       .maybeSingle()
       .then(({ data }) => setNote(data?.note ?? ''));
   }, [visible, post.id, profile]);
+
+  async function postUpdate() {
+    const { data, error: e } = await supabase.rpc('add_post_update', { p_post_id: post.id, p_body: updateText });
+    if (e || !data) return setError(friendlyError(e?.message));
+    onEdited({ addedUpdate: { id: data.id, body: data.body, created_at: data.created_at } });
+    setUpdateText('');
+    close();
+  }
 
   async function saveNote() {
     // A note lives on a save, so save the post first if needed.
@@ -171,6 +181,39 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     return <CreditsSheet postId={post.id} initial={credits.map(({ role, name }) => ({ role, name }))} visible={visible} onClose={close} onSaved={(c) => onEdited({ credits: c })} />;
   }
 
+  if (panel === 'update') {
+    return (
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.md }}>
+            <Text accessibilityRole="button" onPress={close} style={{ color: colors.text, fontSize: 16, width: 70 }}>
+              Cancel
+            </Text>
+            <Text style={{ flex: 1, textAlign: 'center', color: colors.text, fontSize: 17, fontWeight: '700' }}>Post an update</Text>
+            <Text accessibilityRole="button" onPress={postUpdate} style={{ color: colors.primary, fontSize: 16, fontWeight: '700', width: 70, textAlign: 'right' }}>
+              Post
+            </Text>
+          </View>
+          <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: spacing.md }}>
+            Adds a dated note under your post, like "It's finished!" or "Fixed the typo". Up to 10 per post.
+          </Text>
+          <TextInput
+            accessibilityLabel="Update"
+            value={updateText}
+            onChangeText={setUpdateText}
+            multiline
+            autoFocus
+            maxLength={500}
+            placeholder="What changed?"
+            placeholderTextColor={colors.textMuted}
+            style={{ color: colors.text, fontSize: 16, padding: spacing.md, minHeight: 120, textAlignVertical: 'top', outlineStyle: 'none' } as never}
+          />
+          {error ? <Text style={{ color: colors.danger, paddingHorizontal: spacing.md }}>{error}</Text> : null}
+        </SafeAreaView>
+      </Modal>
+    );
+  }
+
   if (panel === 'note') {
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
@@ -227,6 +270,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: commentsEnabled ? 'Turn off commenting' : 'Turn on commenting', onPress: then(() => void toggleComments()) },
                 { label: spoiler ? 'Remove spoiler mark' : 'Mark as spoiler', onPress: then(() => void toggleSpoiler()) },
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
+                { label: 'Post an update', onPress: () => { setUpdateText(''); setPanel('update'); } },
                 { label: series ? `Series: ${series.title}` : 'Add to a series', onPress: () => setPanel('series') },
                 { label: credits.length ? 'Edit credits' : 'Add credits', onPress: () => setPanel('credits') },
                 ...(imageCount === 2 ? [{ label: compare ? 'Show as normal photos' : 'Show as before and after', onPress: then(() => void toggleCompare()) }] : []),

@@ -1,6 +1,6 @@
 # Funkty: waiting for a development build
 
-Things we can't build or test properly in Expo Go. We pick these up once there is an EAS development build installed on the phone. New items are added here as they come up, in the same commit as the work that revealed them. Last updated 2026-11-23 (build 59434c4).
+Things we can't build or test properly in Expo Go. We pick these up once there is an EAS development build installed on the phone. New items are added here as they come up, in the same commit as the work that revealed them. Last updated 2026-11-23.
 
 ## Needs a development build
 
@@ -39,9 +39,15 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 
 - **Content scanning (launch blocker):** image and video scanning for illegal content before anything goes public.
 - **Message requests on the server:** the request/non-request split is calculated in the app today. Move it into a database view or RPC.
-- **Explore ranking:** a real recommendation feed.
+- **Explore ranking, next level:** a first version is live (engagement over age, two posts per author, muted authors left out). Later: personalise by who you follow and what you like, and add diversity and safety signals once scanning exists.
 - **pgTAP in CI:** database tests are written but only run by hand.
 - **Supabase auth settings:** email confirmation and the Site URL need checking before launch.
+- **Supabase advisor review (2026-11-23):** no real security findings. Notes for later:
+  - `username_available` is deliberately callable before sign-in (the sign-up screen checks names). Keep it, but rate-limit it at the edge when the API exists.
+  - The "signed-in users can run SECURITY DEFINER functions" warnings are the intended RPC pattern. Each function checks `auth.uid()` itself.
+  - `audit_log`, `outbox_events`, `reserved_usernames` and `staff_roles` have RLS on and no policies on purpose (service role only).
+  - Auth server uses an absolute connection count (10). Switch to a percentage in the dashboard when the instance is upsized.
+  - Unused-index notices are expected while there is almost no data. Review again with real traffic.
 - **Expo token cleanup:** rotate or remove the access token used during setup.
 
 ## Blocked on a decision

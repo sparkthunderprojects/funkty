@@ -22,9 +22,9 @@ function compact(n: number): string {
   return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.0', '')}M` : n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : String(n);
 }
 
-type Props = { post: FeedPost; liked: boolean; saved: boolean; onDeleted?: () => void };
+type Props = { post: FeedPost; liked: boolean; saved: boolean; onDeleted?: () => void; allUpdates?: boolean };
 
-export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, onDeleted }: Props) {
+export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, onDeleted, allUpdates }: Props) {
   const { colors, fontSize, spacing } = useTheme();
   const [liked, setLiked] = useState(initiallyLiked);
   const [saved, setSaved] = useState(initiallySaved);
@@ -38,6 +38,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   const [compare, setCompare] = useState(post.is_compare);
   const [series, setSeries] = useState(post.series);
   const [credits, setCredits] = useState(post.post_credits ?? []);
+  const [updates, setUpdates] = useState(post.post_updates ?? []);
+  const sortedUpdates = [...updates].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const images = postImages(post);
   const video = postVideo(post);
   // A video without a poster frame would show as a black box, so it starts playing, muted.
@@ -102,6 +104,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           if (patch.compare !== undefined) setCompare(patch.compare);
           if (patch.series !== undefined) setSeries(patch.series);
           if (patch.credits !== undefined) setCredits(patch.credits);
+          if (patch.addedUpdate) setUpdates((u) => [...u, patch.addedUpdate!]);
           if (patch.spoiler !== undefined) {
             setSpoiler(patch.spoiler);
             setRevealed(false);
@@ -206,6 +209,19 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         ) : null}
         {caption ? (
           <RichText lead={username} text={caption} style={{ color: colors.text, fontSize: fontSize.body }} />
+        ) : null}
+        {(allUpdates ? [...sortedUpdates].reverse() : sortedUpdates.slice(-1)).map((u) => (
+          <Text key={u.id} style={{ color: colors.text, fontSize: 13 }}>
+            <Text style={{ fontWeight: '700' }}>Update · {timeAgo(u.created_at)} ago: </Text>
+            {u.body}
+          </Text>
+        ))}
+        {!allUpdates && updates.length > 1 ? (
+          <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
+            <Text accessibilityRole="link" style={{ color: colors.textMuted, fontSize: 12 }}>
+              See all {updates.length} updates
+            </Text>
+          </Link>
         ) : null}
         {credits.length > 0 ? (
           <Text style={{ color: colors.textMuted, fontSize: 12 }}>
