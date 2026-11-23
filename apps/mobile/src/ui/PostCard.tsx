@@ -2,12 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { type FeedPost, postImages, timeAgo } from '../lib/posts';
+import { type FeedPost, postImages, postVideo, timeAgo } from '../lib/posts';
 import { shareLink } from '../lib/share';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 import { Avatar } from './Avatar';
 import { Carousel } from './Carousel';
+import { Clip } from './Clip';
+import { Image } from 'expo-image';
 import { RichText } from './RichText';
 
 /** 1200 -> 1.2K, so counts stay short next to the icons. */
@@ -23,6 +25,9 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
   const [saved, setSaved] = useState(initiallySaved);
   const [likes, setLikes] = useState(post.post_stats?.like_count ?? 0);
   const images = postImages(post);
+  const video = postVideo(post);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
   const username = post.profiles?.username ?? 'unknown';
   const comments = post.post_stats?.comment_count ?? 0;
 
@@ -62,7 +67,40 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           </Pressable>
         </Link>
       </View>
-      {images.length > 0 ? (
+      {video ? (
+        playing ? (
+          <View>
+            <Clip
+              uri={video.url}
+              poster={video.poster}
+              active
+              muted={muted}
+              onDoubleTap={() => {
+                if (!liked) void toggleLike();
+              }}
+              style={{ width: '100%', aspectRatio: Math.max(video.ratio, 0.8) }}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={muted ? 'Unmute' : 'Mute'}
+              onPress={() => setMuted((m) => !m)}
+              hitSlop={8}
+              style={{ position: 'absolute', right: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 14, padding: 6 }}
+            >
+              <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={16} color="#fff" />
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable accessibilityRole="button" accessibilityLabel="Play video" onPress={() => setPlaying(true)}>
+            <View style={{ width: '100%', aspectRatio: Math.max(video.ratio, 0.8), backgroundColor: '#000' }}>
+              {video.poster ? <Image source={{ uri: video.poster }} contentFit="cover" style={{ width: '100%', height: '100%' }} /> : null}
+              <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="play-circle" size={64} color="rgba(255,255,255,0.9)" />
+              </View>
+            </View>
+          </Pressable>
+        )
+      ) : images.length > 0 ? (
         <Carousel
           images={images}
           label={`Photo by ${username}`}

@@ -30,6 +30,14 @@
         {
           "photosPermission": "Funkty needs your photos so you can share them."
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Funkty needs your photos so you can share them.",
+          "savePhotosPermission": false,
+          "isAccessMediaLocationEnabled": false
+        }
       ]
     ],
     "experiments": {

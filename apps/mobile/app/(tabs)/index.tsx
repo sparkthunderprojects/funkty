@@ -19,6 +19,7 @@ export default function Home() {
   const { profile } = useSession();
   const router = useRouter();
   const [unreadActivity, setUnreadActivity] = useState(0);
+  const [unreadDms, setUnreadDms] = useState(0);
   const [mode, setMode] = useState<Mode>('everyone');
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [liked, setLiked] = useState<Set<string>>(new Set());
@@ -60,6 +61,8 @@ export default function Home() {
       .eq('user_id', profile.id)
       .is('read_at', null);
     setUnreadActivity(unread.count ?? 0);
+    const inbox = await supabase.rpc('inbox');
+    setUnreadDms((inbox.data ?? []).reduce((n, c) => n + Number(c.unread), 0));
     setLoading(false);
   }, [mode, profile]);
 
@@ -77,6 +80,7 @@ export default function Home() {
             <Feather name="plus" size={30} color={colors.text} />
           </Pressable>
           <Logo height={34} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={unreadActivity > 0 ? `Activity, ${unreadActivity} unread` : 'Activity'}
@@ -88,6 +92,20 @@ export default function Home() {
               <View style={{ position: 'absolute', top: 0, right: 0, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
             ) : null}
           </Pressable>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={unreadDms > 0 ? `Messages, ${unreadDms} unread` : 'Messages'}
+              onPress={() => router.push('/messages')}
+              hitSlop={10}
+            >
+              <Ionicons name="paper-plane-outline" size={26} color={colors.text} />
+              {unreadDms > 0 ? (
+                <View style={{ position: 'absolute', top: -6, right: -8, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadDms}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          </View>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           {(['everyone', 'following'] as const).map((m) => (

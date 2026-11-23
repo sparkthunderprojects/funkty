@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
@@ -9,7 +9,7 @@ import { Screen } from '../../src/ui/Screen';
 
 export default function Tag() {
   const { tag } = useLocalSearchParams<{ tag: string }>();
-  const { colors, fontSize } = useTheme();
+  const { colors, fontSize, spacing } = useTheme();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,9 @@ export default function Tag() {
       <Stack.Screen options={{ title: `#${tag}` }} />
       <Text style={{ color: colors.text, fontSize: fontSize.headline, fontWeight: '800' }}>#{tag}</Text>
       {posts.length > 0 ? (
-        <PostGrid posts={posts} />
+        <View style={{ marginHorizontal: -spacing.lg }}>
+          <PostGrid posts={posts} />
+        </View>
       ) : (
         !loading && <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>No posts with this hashtag yet.</Text>
       )}

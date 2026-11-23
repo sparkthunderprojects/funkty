@@ -1,41 +1,139 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { type Picked, maxPostPhotos, pickImages, publishPhotos, publishStoryPhoto } from '../../src/lib/posts';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { type Aspect, type Edit, baseKey, defaultEdit, renderEdit } from '../../src/lib/editing';
+import { filters } from '../../src/lib/filters';
+import { applyPixelFilter, filtersSupported } from '../../src/lib/pixelFilter';
+import {
+  type PickedMedia,
+  maxImageWidth,
+  maxPostPhotos,
+  pickMedia,
+  publishPhotos,
+  publishStoryPhoto,
+  publishVideo,
+} from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { useTheme } from '../../src/theme';
-import { Button } from '../../src/ui/Button';
-import { Screen } from '../../src/ui/Screen';
-import { TextField } from '../../src/ui/TextField';
+import { Clip } from '../../src/ui/Clip';
+import { LibraryGrid, type LibraryPick } from '../../src/ui/LibraryGrid';
 
-type Mode = 'post' | 'story';
+type Mode = 'post' | 'story' | 'reel';
+type Step = 'select' | 'edit' | 'details';
+type Item = PickedMedia & { id: string; libId?: string; edit: Edit };
+
+const modeTitle: Record<Mode, string> = { post: 'New post', story: 'New story', reel: 'New reel' };
+const newId = () => Math.random().toString(36).slice(2, 10);
 
 export default function Create() {
-  const { colors, fontSize, radius, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [mode, setMode] = useState<Mode>('post');
-  const [photos, setPhotos] = useState<Picked[]>([]);
+  const [step, setStep] = useState<Step>('select');
+  const [items, setItems] = useState<Item[]>([]);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [multiple, setMultiple] = useState(false);
   const [caption, setCaption] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [libraryDenied, setLibraryDenied] = useState(false);
 
-  async function choose() {
-    const picked = await pickImages(mode === 'post');
-    if (picked.length > 0) setPhotos(picked.slice(0, mode === 'post' ? maxPostPhotos : 1));
+  const kinds = mode === 'post' ? 'both' : mode === 'reel' ? 'videos' : 'photos';
+  const focus = items.find((i) => i.id === focusId) ?? items[0];
+  const selected = useMemo(() => new Map(items.flatMap((i, n) => (i.libId ? [[i.libId, n + 1] as const] : []))), [items]);
+  const allowMany = mode === 'post' && multiple;
+
+  function reset(nextMode: Mode) {
+    setMode(nextMode);
+    setItems([]);
+    setFocusId(null);
+    setMultiple(false);
+    setStep('select');
+    setError(null);
+  }
+
+  function close() {
+    setItems([]);
+    setCaption('');
+    setStep('select');
+    router.navigate('/');
+  }
+
+  /** Adds one picked item, enforcing: one video or up to ten photos, never mixed. */
+  function add(media: PickedMedia, libId?: string) {
+    const item: Item = { ...media, id: newId(), libId, edit: defaultEdit };
+    setError(null);
+    setItems((current) => {
+      if (media.kind === 'video' || !allowMany) return [item];
+      if (current.some((c) => c.kind === 'video')) return [item];
+      if (current.length >= maxPostPhotos) {
+        setError(`You can share up to ${maxPostPhotos} photos in one post.`);
+        return current;
+      }
+      return [...current, item];
+    });
+    setFocusId(item.id);
+  }
+
+  function onLibraryTap(pick: LibraryPick) {
+    const existing = items.find((i) => i.libId === pick.libId);
+    if (!existing) return add(pick, pick.libId);
+    if (allowMany && focus?.id !== existing.id) return setFocusId(existing.id);
+    setItems((c) => c.filter((i) => i.id !== existing.id));
+    setFocusId(null);
+  }
+
+  async function browse() {
+    const picked = await pickMedia(kinds, allowMany);
+    if (picked.length === 0) return;
+    if (allowMany && picked.every((p) => p.kind === 'photo')) {
+      const next = picked.slice(0, maxPostPhotos).map((p): Item => ({ ...p, id: newId(), edit: defaultEdit }));
+      setItems(next);
+      setFocusId(next[0]?.id ?? null);
+    } else {
+      add(picked[0]!);
+    }
+  }
+
+  function patchEdit(id: string, patch: Partial<Edit>) {
+    setItems((c) => c.map((i) => (i.id === id ? { ...i, edit: { ...i.edit, ...patch } } : i)));
+  }
+
+  function next() {
+    if (items.length === 0) return;
+    if (step === 'select') setStep(items[0]!.kind === 'video' ? 'details' : 'edit');
+    else if (step === 'edit') setStep('details');
+  }
+
+  function back() {
+    if (step === 'details') setStep(items[0]?.kind === 'video' ? 'select' : 'edit');
+    else if (step === 'edit') setStep('select');
+    else close();
   }
 
   async function share() {
-    if (photos.length === 0 || !profile) return;
+    if (items.length === 0 || !profile) return;
     setBusy(true);
     setError(null);
     try {
-      if (mode === 'post') await publishPhotos(photos, profile.id, caption);
-      else await publishStoryPhoto(photos[0], profile.id);
-      setPhotos([]);
+      if (items[0]!.kind === 'video') {
+        await publishVideo(items[0]!, profile.id, caption);
+      } else {
+        const rendered = [];
+        for (const item of items) rendered.push(await renderEdit(item, item.edit, maxImageWidth));
+        if (mode === 'story') await publishStoryPhoto(rendered[0]!, profile.id);
+        else await publishPhotos(rendered, profile.id, caption);
+      }
+      const wasVideo = items[0]!.kind === 'video';
+      setItems([]);
       setCaption('');
-      router.navigate('/');
+      setStep('select');
+      router.navigate(wasVideo ? '/reels' : '/');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
     } finally {
@@ -43,75 +141,289 @@ export default function Create() {
     }
   }
 
-  const first = photos[0];
+  const title = step === 'edit' ? 'Edit' : step === 'details' ? modeTitle[mode] : modeTitle[mode];
+  const nextLabel = step === 'details' ? (mode === 'story' ? 'Share to story' : 'Share') : 'Next';
   return (
-    <Screen scroll>
-      <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        {(['post', 'story'] as const).map((m) => (
-          <Pressable
-            key={m}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: mode === m }}
-            onPress={() => {
-              setMode(m);
-              setPhotos([]);
-            }}
-          >
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, height: 48 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={step === 'select' ? 'Close' : 'Back'} onPress={back} hitSlop={12} style={{ width: 70 }}>
+          <Ionicons name={step === 'select' ? 'close' : 'chevron-back'} size={30} color={colors.text} />
+        </Pressable>
+        <Text style={{ flex: 1, textAlign: 'center', color: colors.text, fontSize: 17, fontWeight: '700' }}>{title}</Text>
+        <View style={{ width: 70, alignItems: 'flex-end' }}>
+          {busy ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
             <Text
-              style={{
-                color: mode === m ? colors.text : colors.textMuted,
-                fontSize: fontSize.title,
-                fontWeight: '800',
-                textDecorationLine: mode === m ? 'underline' : 'none',
-              }}
+              accessibilityRole="button"
+              onPress={items.length === 0 ? undefined : step === 'details' ? share : next}
+              style={{ color: colors.primary, fontSize: 16, fontWeight: '700', opacity: items.length === 0 ? 0.4 : 1 }}
             >
-              {m === 'post' ? 'New post' : 'New story'}
+              {nextLabel}
             </Text>
-          </Pressable>
-        ))}
-      </View>
-      {first ? (
-        <Image
-          source={{ uri: first.uri }}
-          accessibilityLabel="Selected photo"
-          style={{ width: '100%', aspectRatio: Math.min(Math.max(first.width / first.height, 0.8), 1.91), borderRadius: radius.md }}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={{ height: 240, borderRadius: radius.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>No photo selected</Text>
+          )}
         </View>
+      </View>
+
+      {step === 'select' ? (
+        <View style={{ flex: 1 }}>
+          <View style={{ width, height: width, backgroundColor: colors.surface }}>
+            {focus ? (
+              focus.kind === 'video' ? (
+                <Clip key={focus.id} uri={focus.uri} active muted style={{ width, height: width }} />
+              ) : (
+                <Image source={{ uri: focus.uri }} contentFit="cover" style={{ width, height: width }} accessibilityLabel="Selected photo" />
+              )
+            ) : (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Ionicons name="images-outline" size={44} color={colors.textMuted} />
+                <Text style={{ color: colors.textMuted, fontSize: 15 }}>
+                  {mode === 'reel' ? 'Choose a video' : mode === 'story' ? 'Choose a photo' : 'Choose photos or a video'}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 10 }}>
+            <Text style={{ color: colors.text, fontSize: 16, fontWeight: '700', flex: 1 }}>{Platform.OS === 'web' ? 'Your library' : 'Recents'}</Text>
+            {mode === 'post' ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: multiple }}
+                onPress={() => {
+                  setMultiple((m) => !m);
+                  setItems((c) => c.slice(0, 1));
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: multiple ? colors.primary : colors.surface, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7 }}
+              >
+                <Ionicons name="copy-outline" size={16} color={multiple ? '#fff' : colors.text} />
+                <Text style={{ color: multiple ? '#fff' : colors.text, fontSize: 13, fontWeight: '600' }}>Select multiple</Text>
+              </Pressable>
+            ) : null}
+            <Pressable accessibilityRole="button" accessibilityLabel="Browse files" onPress={browse} style={{ backgroundColor: colors.surface, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{Platform.OS === 'web' ? 'Choose' : 'Browse'}</Text>
+            </Pressable>
+          </View>
+          {error ? (
+            <Text accessibilityRole="alert" style={{ color: colors.danger, paddingHorizontal: spacing.md, paddingBottom: 6 }}>
+              {error}
+            </Text>
+          ) : null}
+          {Platform.OS === 'web' || libraryDenied ? (
+            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+              {items.map((item, n) => {
+                const size = Math.floor((width - 3) / 4);
+                return (
+                  <Pressable key={item.id} accessibilityRole="button" onPress={() => setFocusId(item.id)} style={{ width: size, height: size, backgroundColor: colors.surface }}>
+                    {item.kind === 'photo' ? <Image source={{ uri: item.uri }} contentFit="cover" style={{ width: size, height: size }} /> : <Ionicons name="play" size={22} color={colors.text} style={{ margin: 'auto' }} />}
+                    {items.length > 1 ? (
+                      <View style={{ position: 'absolute', top: 5, right: 5, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{n + 1}</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add from library"
+                onPress={browse}
+                style={{ width: Math.floor((width - 3) / 4), height: Math.floor((width - 3) / 4), backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="add" size={30} color={colors.textMuted} />
+              </Pressable>
+            </ScrollView>
+          ) : (
+            <View style={{ flex: 1 }}>
+              <LibraryGrid kinds={kinds} selected={selected} multiple={allowMany} onTap={onLibraryTap} onDenied={() => setLibraryDenied(true)} />
+            </View>
+          )}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 28, paddingVertical: 12, borderTopWidth: 1, borderColor: colors.border }}>
+            {(['post', 'story', 'reel'] as const).map((m) => (
+              <Text
+                key={m}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mode === m }}
+                onPress={() => reset(m)}
+                style={{ color: mode === m ? colors.text : colors.textMuted, fontSize: 13, fontWeight: '700', letterSpacing: 0.6 }}
+              >
+                {m.toUpperCase()}
+              </Text>
+            ))}
+          </View>
+        </View>
+      ) : step === 'edit' && focus ? (
+        <Editor items={items} focus={focus} onFocus={setFocusId} onPatch={patchEdit} />
+      ) : (
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+            {focus ? <DetailThumb item={focus} count={items.length} /> : null}
+            {mode !== 'story' ? (
+              <TextInput
+                accessibilityLabel="Caption"
+                value={caption}
+                onChangeText={setCaption}
+                placeholder="Write a caption… use #hashtags and @mentions"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={2200}
+                style={{ flex: 1, minHeight: 88, color: colors.text, fontSize: 16, textAlignVertical: 'top', outlineStyle: 'none' } as never}
+              />
+            ) : (
+              <Text style={{ flex: 1, color: colors.textMuted, fontSize: 14 }}>Your story disappears after 24 hours.</Text>
+            )}
+          </View>
+          {busy ? <Text style={{ color: colors.textMuted }}>{items[0]?.kind === 'video' ? 'Uploading video. This can take a moment…' : 'Sharing…'}</Text> : null}
+          {error ? (
+            <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: 14 }}>
+              {error}
+            </Text>
+          ) : null}
+        </ScrollView>
       )}
-      {photos.length > 1 ? (
-        <ScrollView horizontal contentContainerStyle={{ gap: spacing.sm }}>
-          {photos.map((p, i) => (
-            <Image key={i} source={{ uri: p.uri }} style={{ width: 64, height: 64, borderRadius: radius.sm }} contentFit="cover" />
+    </SafeAreaView>
+  );
+}
+
+function DetailThumb({ item, count }: { item: Item; count: number }) {
+  const { colors } = useTheme();
+  const [uri, setUri] = useState<string | null>(item.kind === 'photo' ? item.uri : null);
+  useEffect(() => {
+    if (item.kind !== 'photo') return;
+    let live = true;
+    renderEdit(item, item.edit, 240).then((r) => live && setUri(r.uri));
+    return () => {
+      live = false;
+    };
+  }, [item]);
+  return (
+    <View style={{ width: 88, height: 88, borderRadius: 6, backgroundColor: colors.surface, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+      {uri ? <Image source={{ uri }} contentFit="cover" style={{ width: 88, height: 88 }} /> : <Ionicons name="play" size={26} color={colors.text} />}
+      {count > 1 ? (
+        <View style={{ position: 'absolute', top: 4, right: 4 }}>
+          <Ionicons name="copy" size={14} color="#fff" />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function Editor({ items, focus, onFocus, onPatch }: { items: Item[]; focus: Item; onFocus: (id: string) => void; onPatch: (id: string, patch: Partial<Edit>) => void }) {
+  const { colors, spacing } = useTheme();
+  const { width } = useWindowDimensions();
+  const [tab, setTab] = useState<'filters' | 'edit'>(filtersSupported ? 'filters' : 'edit');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const ticket = useRef(0);
+
+  // Main preview: re-render whenever this photo or its edits change.
+  useEffect(() => {
+    const mine = ++ticket.current;
+    setWorking(true);
+    renderEdit(focus, focus.edit, 1080)
+      .then((r) => {
+        if (mine === ticket.current) setPreview(r.uri);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (mine === ticket.current) setWorking(false);
+      });
+  }, [focus]);
+
+  // Filter strip: one small base render, then each filter applied to it.
+  const key = `${focus.id}|${baseKey(focus.edit)}`;
+  useEffect(() => {
+    if (!filtersSupported || tab !== 'filters') return;
+    let live = true;
+    setThumbs({});
+    void (async () => {
+      const base = await renderEdit(focus, { ...focus.edit, filter: 'normal' }, 150);
+      for (const f of filters) {
+        const out = await applyPixelFilter(base, f.id);
+        if (!live) return;
+        setThumbs((t) => ({ ...t, [f.id]: out.uri }));
+      }
+    })().catch(() => undefined);
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, tab]);
+
+  const aspects: [Aspect, string][] = [['original', 'Original'], ['1:1', 'Square'], ['4:5', 'Portrait']];
+  const tool = { alignItems: 'center', gap: 6, minWidth: 72 } as const;
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={{ width, height: width, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+        {preview ? <Image source={{ uri: preview }} contentFit="contain" style={{ width, height: width }} accessibilityLabel="Photo preview" /> : null}
+        {working ? (
+          <View style={{ position: 'absolute' }}>
+            <ActivityIndicator color={colors.text} />
+          </View>
+        ) : null}
+      </View>
+      {items.length > 1 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, padding: spacing.sm }}>
+          {items.map((i, n) => (
+            <Pressable key={i.id} accessibilityRole="button" accessibilityLabel={`Photo ${n + 1}`} onPress={() => onFocus(i.id)}>
+              <Image source={{ uri: i.uri }} contentFit="cover" style={{ width: 52, height: 52, borderRadius: 4, borderWidth: i.id === focus.id ? 2 : 0, borderColor: colors.primary }} />
+            </Pressable>
           ))}
         </ScrollView>
       ) : null}
-      <Button
-        label={photos.length > 0 ? 'Choose different photos' : mode === 'post' ? `Choose photos (up to ${maxPostPhotos})` : 'Choose a photo'}
-        variant="secondary"
-        onPress={choose}
-      />
-      {mode === 'post' ? (
-        <TextField
-          label="Caption"
-          value={caption}
-          onChangeText={setCaption}
-          placeholder="Write a caption… use #hashtags and @mentions"
-          multiline
-          maxLength={2200}
-        />
+      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border }}>
+        {([['filters', 'Filters'], ['edit', 'Edit']] as const)
+          .filter(([k]) => k === 'edit' || filtersSupported)
+          .map(([k, label]) => (
+            <Pressable
+              key={k}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === k }}
+              onPress={() => setTab(k)}
+              style={{ flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: tab === k ? colors.text : 'transparent', marginBottom: -1 }}
+            >
+              <Text style={{ color: tab === k ? colors.text : colors.textMuted, fontWeight: '700', fontSize: 14 }}>{label}</Text>
+            </Pressable>
+          ))}
+      </View>
+      {tab === 'filters' && filtersSupported ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, padding: spacing.md }}>
+          {filters.map((f) => (
+            <Pressable key={f.id} accessibilityRole="button" accessibilityState={{ selected: focus.edit.filter === f.id }} onPress={() => onPatch(focus.id, { filter: f.id })} style={{ alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 82, height: 82, borderRadius: 6, backgroundColor: colors.surface, overflow: 'hidden', borderWidth: 2, borderColor: focus.edit.filter === f.id ? colors.primary : 'transparent' }}>
+                {thumbs[f.id] ? <Image source={{ uri: thumbs[f.id] }} contentFit="cover" style={{ width: '100%', height: '100%' }} /> : null}
+              </View>
+              <Text style={{ color: focus.edit.filter === f.id ? colors.text : colors.textMuted, fontSize: 12, fontWeight: focus.edit.filter === f.id ? '700' : '400' }}>{f.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       ) : (
-        <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>Stories disappear after 24 hours.</Text>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Rotate" onPress={() => onPatch(focus.id, { rotate: (((focus.edit.rotate + 90) % 360) as Edit['rotate']) })} style={tool}>
+              <Ionicons name="refresh-outline" size={26} color={colors.text} />
+              <Text style={{ color: colors.text, fontSize: 12 }}>Rotate</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Flip" onPress={() => onPatch(focus.id, { flipped: !focus.edit.flipped })} style={tool}>
+              <Ionicons name="swap-horizontal-outline" size={26} color={colors.text} />
+              <Text style={{ color: colors.text, fontSize: 12 }}>Flip</Text>
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10 }}>
+            {aspects.map(([a, label]) => (
+              <Pressable
+                key={a}
+                accessibilityRole="button"
+                accessibilityState={{ selected: focus.edit.aspect === a }}
+                onPress={() => onPatch(focus.id, { aspect: a })}
+                style={{ borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: focus.edit.aspect === a ? colors.text : colors.surface }}
+              >
+                <Text style={{ color: focus.edit.aspect === a ? colors.background : colors.text, fontSize: 13, fontWeight: '600' }}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
       )}
-      {error ? (
-        <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: fontSize.body }}>
-          {error}
-        </Text>
-      ) : null}
-      <Button label={mode === 'post' ? 'Share' : 'Share to story'} onPress={share} loading={busy} disabled={photos.length === 0} />
-    </Screen>
+    </View>
   );
 }

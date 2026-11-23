@@ -1,5 +1,6 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { makePoster, probeDurationMs } from './poster';
 import { supabase } from './supabase';
 
 export const maxImageWidth = 1440;
@@ -15,6 +16,7 @@ export type Author = {
 
 export type FeedPost = {
   id: string;
+  kind: string;
   caption: string | null;
   created_at: string;
   author_id: string;
@@ -23,11 +25,17 @@ export type FeedPost = {
   post_media: {
     position: number;
     alt_text: string | null;
-    media_assets: { storage_key: string; width: number | null; height: number | null } | null;
+    media_assets: {
+      storage_key: string;
+      width: number | null;
+      height: number | null;
+      kind: string;
+      variants: { poster?: string } | null;
+    } | null;
   }[];
 };
 
-export const feedSelect = `id, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height))`;
+export const feedSelect = `id, kind, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
 export const authorSelect = `username, display_name, ${avatarEmbed}`;
 
 export function mediaUrl(storageKey: string): string {
@@ -41,15 +49,30 @@ export function postImages(post: FeedPost): PostImage[] {
     .sort((a, b) => a.position - b.position)
     .flatMap((m) => {
       if (!m.media_assets) return [];
-      const { storage_key, width, height } = m.media_assets;
+      const { storage_key, width, height, kind, variants } = m.media_assets;
+      // A video is shown in grids and previews by its poster frame.
+      const shown = kind === 'video' ? variants?.poster : storage_key;
+      if (!shown) return [];
       return [
         {
-          url: mediaUrl(storage_key),
+          url: mediaUrl(shown),
           alt: m.alt_text,
           ratio: width && height ? Math.min(Math.max(width / height, 0.8), 1.91) : 1,
         },
       ];
     });
+}
+
+export type PostVideo = { url: string; poster: string | null; ratio: number };
+
+export function postVideo(post: FeedPost): PostVideo | null {
+  const asset = post.post_media.find((m) => m.media_assets?.kind === 'video')?.media_assets;
+  if (!asset) return null;
+  return {
+    url: mediaUrl(asset.storage_key),
+    poster: asset.variants?.poster ? mediaUrl(asset.variants.poster) : null,
+    ratio: asset.width && asset.height ? Math.min(Math.max(asset.width / asset.height, 0.5), 1.91) : 9 / 16,
+  };
 }
 
 export function firstImage(post: FeedPost): PostImage | null {
@@ -142,4 +165,91 @@ export async function setAvatar(asset: Picked, userId: string): Promise<void> {
   const id = await uploadImage(asset, userId);
   const { error } = await supabase.from('profiles').update({ avatar_media_id: id }).eq('id', userId);
   if (error) throw new Error(friendlyError(error.message));
+}
+
+export const maxVideoBytes = 50 * 1024 * 1024;
+export const maxVideoMs = 90_000;
+
+export type PickedMedia = {
+  kind: 'photo' | 'video';
+  uri: string;
+  width: number;
+  height: number;
+  durationMs?: number;
+  mime?: string;
+};
+
+export async function pickMedia(kinds: 'photos' | 'videos' | 'both', multiple: boolean): Promise<PickedMedia[]> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: kinds === 'photos' ? ['images'] : kinds === 'videos' ? ['videos'] : ['images', 'videos'],
+    quality: 1,
+    allowsMultipleSelection: multiple,
+    selectionLimit: multiple ? maxPostPhotos : 1,
+  });
+  if (result.canceled) return [];
+  return result.assets.map((a) => ({
+    kind: a.type === 'video' ? 'video' : 'photo',
+    uri: a.uri,
+    width: a.width,
+    height: a.height,
+    durationMs: a.duration ?? undefined,
+    mime: a.mimeType ?? undefined,
+  }));
+}
+
+const videoTypes: Record<string, string> = {
+  'video/mp4': 'mp4',
+  'video/quicktime': 'mov',
+  'video/webm': 'webm',
+};
+
+/** Uploads a video and its poster frame to the caller's own folder and registers it. Returns the media id. */
+export async function uploadVideo(video: PickedMedia, userId: string): Promise<string> {
+  const blob = await (await fetch(video.uri)).blob();
+  const mime = videoTypes[blob.type] ? blob.type : video.mime && videoTypes[video.mime] ? video.mime : 'video/mp4';
+  if (blob.size > maxVideoBytes) throw new Error('That video is too large. Videos can be up to 50 MB.');
+  const durationMs = (await probeDurationMs(video.uri)) || video.durationMs || 0;
+  if (durationMs > maxVideoMs) throw new Error('That video is too long. Videos can be up to 90 seconds.');
+
+  const stem = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const key = `${stem}.${videoTypes[mime]}`;
+  const up = await supabase.storage.from('media').upload(key, blob, { contentType: mime });
+  if (up.error) throw new Error('Upload failed. Check your connection and try again.');
+
+  let posterKey: string | null = null;
+  let width = video.width;
+  let height = video.height;
+  const poster = await makePoster(video.uri);
+  if (poster) {
+    const posterUp = await supabase.storage.from('media').upload(`${stem}-poster.jpg`, poster.blob, { contentType: 'image/jpeg' });
+    if (!posterUp.error) posterKey = `${stem}-poster.jpg`;
+    width = width || poster.width;
+    height = height || poster.height;
+  }
+
+  const registered = await supabase.rpc('register_video', {
+    p_storage_key: key,
+    p_mime_type: mime,
+    p_bytes: blob.size,
+    p_duration_ms: Math.max(durationMs, 500),
+    p_width: width || undefined,
+    p_height: height || undefined,
+    p_poster_key: posterKey ?? undefined,
+  });
+  if (registered.error || !registered.data) {
+    await supabase.storage.from('media').remove(posterKey ? [key, posterKey] : [key]);
+    throw new Error(
+      registered.error?.message === 'invalid_duration'
+        ? 'Videos must be between 1 and 90 seconds long.'
+        : friendlyError(registered.error?.message),
+    );
+  }
+  return registered.data.id;
+}
+
+export async function publishVideo(video: PickedMedia, userId: string, caption: string): Promise<string> {
+  const id = await uploadVideo(video, userId);
+  const published = await supabase.rpc('publish_post', { p_caption: caption.trim(), p_media_ids: [id] });
+  if (published.error || !published.data) throw new Error(friendlyError(published.error?.message));
+  return published.data.id;
 }

@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
@@ -10,23 +10,16 @@ import { useTheme } from '../../src/theme';
 export default function TabsLayout() {
   const { colors } = useTheme();
   const { profile } = useSession();
-  const router = useRouter();
-  const [unreadDms, setUnreadDms] = useState(0);
   const [avatar, setAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) return;
-    const check = () =>
-      supabase.rpc('inbox').then(({ data }) => setUnreadDms((data ?? []).reduce((n, c) => n + Number(c.unread), 0)));
-    void check();
-    const timer = setInterval(check, 30000);
     supabase
       .from('profiles')
       .select('avatar:media_assets!profiles_avatar_media_fk(storage_key)')
       .eq('id', profile.id)
       .maybeSingle()
       .then(({ data }) => setAvatar((data as unknown as { avatar: { storage_key: string } | null } | null)?.avatar?.storage_key ?? null));
-    return () => clearInterval(timer);
   }, [profile]);
 
   return (
@@ -57,24 +50,19 @@ export default function TabsLayout() {
         name="create"
         options={{
           title: 'Create',
+          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ color }) => <Feather name="plus-square" size={25} color={String(color)} />,
         }}
       />
       <Tabs.Screen name="activity" options={{ title: 'Activity', href: null }} />
       <Tabs.Screen
-        name="inbox"
+        name="reels"
         options={{
-          title: 'Messages',
-          tabBarBadge: unreadDms > 0 ? unreadDms : undefined,
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'paper-plane' : 'paper-plane-outline'} size={25} color={String(color)} />,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            router.push('/messages');
-          },
+          title: 'Reels',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'film' : 'film-outline'} size={25} color={String(color)} />,
         }}
       />
+      <Tabs.Screen name="inbox" options={{ title: 'Messages', href: null }} />
       <Tabs.Screen
         name="profile"
         options={{
