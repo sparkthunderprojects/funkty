@@ -54,6 +54,34 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 
 - Close friends list for stories, story replies and reactions, comment likes, message reactions and unsend, story archive, scheduled posts and drafts.
 
+### From the TikTok audit (2026-11-23)
+
+Buildable now (Expo Go + Supabase):
+- Not interested / Manage topics / Refresh my feed (feed controls).
+- Repost with a short note.
+- Playlists for reels (extend collections/series).
+- Shared collections (invite friends to one saved collection).
+- Friends tab (posts from mutual follows).
+- Screen time: daily limit, break reminders, sleep reminder, weekly recap.
+- Comment controls: filter keywords, approve comments, comments with media.
+- Privacy toggles: who can download, who can remix, activity status, post and profile view history.
+- Accessibility: reduce motion, captions on by default.
+- Series planner / posting streaks for creators.
+
+Needs a development build or heavy media work:
+- Remix (Duet/Stitch style) side-by-side and clip-in video.
+- Effects, filters, sounds library, in-app video editor.
+- Live streaming, Live replays.
+- Photo mode with music.
+
+Needs server or safety groundwork first:
+- Context notes on posts (Footnotes style) needs a moderation flow.
+- Family pairing and teen defaults (60 min limit, DMs off, night mute).
+- Shop and commerce.
+- AI features (captions, dubbing).
+
+Decided not to copy: TikTok Shop, Campus Hub, Nearby feed, AI dubbing.
+
 ## Blocked on a decision
 
 - **Links in captions and a followers export:** held back until the safety work exists (link scanning, abuse limits).
