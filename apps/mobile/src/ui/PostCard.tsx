@@ -81,6 +81,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         caption={caption}
         commentsEnabled={commentsEnabled}
         spoiler={spoiler}
+        saved={saved}
+        onSaved={() => setSaved(true)}
         visible={menu}
         onClose={() => setMenu(false)}
         onEdited={(patch) => {

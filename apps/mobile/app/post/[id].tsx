@@ -34,6 +34,7 @@ export default function PostDetail() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
@@ -41,7 +42,7 @@ export default function PostDetail() {
     const [postRes, likeRes, saveRes, commentRes] = await Promise.all([
       supabase.from('posts').select(feedSelect).eq('id', id).maybeSingle(),
       supabase.from('likes').select('post_id').eq('user_id', profile.id).eq('post_id', id).maybeSingle(),
-      supabase.from('saves').select('post_id').eq('user_id', profile.id).eq('post_id', id).maybeSingle(),
+      supabase.from('saves').select('post_id, note').eq('user_id', profile.id).eq('post_id', id).maybeSingle(),
       supabase
         .from('comments')
         .select('id, body, created_at, author_id, parent_id, profiles!comments_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))')
@@ -52,6 +53,7 @@ export default function PostDetail() {
     setPost((postRes.data as unknown as FeedPost) ?? null);
     setLiked(!!likeRes.data);
     setSaved(!!saveRes.data);
+    setNote(saveRes.data?.note ?? null);
     setComments((commentRes.data ?? []) as unknown as Comment[]);
     setLoading(false);
   }, [id, profile]);
@@ -149,6 +151,12 @@ export default function PostDetail() {
       <View style={{ marginHorizontal: -spacing.lg }}>
         <PostCard post={post} liked={liked} saved={saved} onDeleted={() => router.back()} />
       </View>
+      {note ? (
+        <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: spacing.md, marginBottom: spacing.md }}>
+          <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600' }}>Your private note</Text>
+          <Text style={{ color: colors.text, fontSize: fontSize.body, marginTop: 2 }}>{note}</Text>
+        </View>
+      ) : null}
       <View>
         {threads.top.length === 0 ? (
           <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>No comments yet. Start the conversation.</Text>

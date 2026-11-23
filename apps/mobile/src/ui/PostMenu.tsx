@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type FeedPost, friendlyError } from '../lib/posts';
@@ -23,6 +23,8 @@ type Props = {
   caption: string | null;
   commentsEnabled: boolean;
   spoiler: boolean;
+  saved?: boolean;
+  onSaved?: () => void;
   visible: boolean;
   onClose: () => void;
   onEdited: (patch: { caption?: string | null; commentsEnabled?: boolean; spoiler?: boolean }) => void;
@@ -30,15 +32,16 @@ type Props = {
   onMuted?: () => void;
 };
 
-type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'thanks';
+type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
-export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
+export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
   const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const [panel, setPanel] = useState<Panel>('menu');
   const [caption, setCaption] = useState(currentCaption ?? '');
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState('');
   const mine = profile?.id === post.author_id;
   const username = post.profiles?.username ?? 'unknown';
 
@@ -52,6 +55,30 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     const { error: e } = await supabase.rpc('edit_post', { p_post_id: post.id, p_caption: caption });
     if (e) return setError(friendlyError(e.message));
     onEdited({ caption: caption.trim() || null });
+    close();
+  }
+
+  // Load the viewer's private note whenever the menu opens.
+  useEffect(() => {
+    if (!visible || !profile) return;
+    supabase
+      .from('saves')
+      .select('note')
+      .eq('post_id', post.id)
+      .eq('user_id', profile.id)
+      .maybeSingle()
+      .then(({ data }) => setNote(data?.note ?? ''));
+  }, [visible, post.id, profile]);
+
+  async function saveNote() {
+    // A note lives on a save, so save the post first if needed.
+    if (!saved) {
+      const { error: se } = await supabase.rpc('save_post', { p_post_id: post.id });
+      if (se) return setError(friendlyError(se.message));
+      onSaved?.();
+    }
+    const { error: e } = await supabase.rpc('set_save_note', { p_post_id: post.id, p_note: note });
+    if (e) return setError(friendlyError(e.message));
     close();
   }
 
@@ -116,6 +143,39 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     );
   }
 
+  if (panel === 'note') {
+    return (
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.md }}>
+            <Text accessibilityRole="button" onPress={close} style={{ color: colors.text, fontSize: 16, width: 70 }}>
+              Cancel
+            </Text>
+            <Text style={{ flex: 1, textAlign: 'center', color: colors.text, fontSize: 17, fontWeight: '700' }}>Private note</Text>
+            <Text accessibilityRole="button" onPress={saveNote} style={{ color: colors.primary, fontSize: 16, fontWeight: '700', width: 70, textAlign: 'right' }}>
+              Done
+            </Text>
+          </View>
+          <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: spacing.md }}>
+            Only you can see this. Saving a note also saves the post, and you can search your notes.
+          </Text>
+          <TextInput
+            accessibilityLabel="Private note"
+            value={note}
+            onChangeText={setNote}
+            multiline
+            autoFocus
+            maxLength={500}
+            placeholder="Why did you save this?"
+            placeholderTextColor={colors.textMuted}
+            style={{ color: colors.text, fontSize: 16, padding: spacing.md, minHeight: 120, textAlignVertical: 'top', outlineStyle: 'none' } as never}
+          />
+          {error ? <Text style={{ color: colors.danger, paddingHorizontal: spacing.md }}>{error}</Text> : null}
+        </SafeAreaView>
+      </Modal>
+    );
+  }
+
   // Every action decides for itself whether the sheet closes or moves to another step.
   const then = (fn: () => void) => () => {
     close();
@@ -138,10 +198,12 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: 'Edit caption', onPress: () => { setCaption(currentCaption ?? ''); setPanel('edit'); } },
                 { label: commentsEnabled ? 'Turn off commenting' : 'Turn on commenting', onPress: then(() => void toggleComments()) },
                 { label: spoiler ? 'Remove spoiler mark' : 'Mark as spoiler', onPress: then(() => void toggleSpoiler()) },
+                { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
                 { label: 'Share', onPress: share },
                 { label: 'Delete', onPress: () => setPanel('confirm-delete'), destructive: true },
               ]
             : [
+                { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
                 { label: 'Share', onPress: share },
                 { label: `Mute ${post.profiles?.username ?? 'account'}`, onPress: () => void mute() },
                 { label: 'Report', onPress: () => setPanel('report'), destructive: true },

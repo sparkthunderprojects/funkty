@@ -73,11 +73,19 @@ export default function Search() {
       const altPosts = altIds.length
         ? await supabase.from('posts').select(feedSelect).in('id', altIds).order('id', { ascending: false })
         : { data: [] };
+      // Posts the user saved with a matching private note (saves are only readable by their owner).
+      const noteRows = profile
+        ? await supabase.from('saves').select('post_id').eq('user_id', profile.id).ilike('note', `%${wordsOnly || query}%`).limit(60)
+        : { data: [] as { post_id: string }[] };
+      const noteIds = (noteRows.data ?? []).map((r) => r.post_id);
+      const notePosts = noteIds.length
+        ? await supabase.from('posts').select(feedSelect).in('id', noteIds).order('id', { ascending: false })
+        : { data: [] };
       if (cancelled) return;
       setAccounts((people.data ?? []) as unknown as Account[]);
       const seen = new Set<string>();
       setPosts(
-        [...((byCaption.data ?? []) as unknown as FeedPost[]), ...((altPosts.data ?? []) as unknown as FeedPost[])].filter((p) =>
+        [...((byCaption.data ?? []) as unknown as FeedPost[]), ...((altPosts.data ?? []) as unknown as FeedPost[]), ...((notePosts.data ?? []) as unknown as FeedPost[])].filter((p) =>
           seen.has(p.id) ? false : (seen.add(p.id), true),
         ),
       );
@@ -88,7 +96,7 @@ export default function Search() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, active]);
+  }, [query, active, profile]);
 
   const tags = useMemo(() => {
     const counts = new Map<string, number>();

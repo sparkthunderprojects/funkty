@@ -935,6 +935,7 @@ export type Database = {
       saves: {
         Row: {
           created_at: string
+          note: string | null
           post_id: string
           user_id: string
         }
@@ -942,11 +943,13 @@ export type Database = {
           created_at?: string
           post_id: string
           user_id: string
+          note?: string | null
         }
         Update: {
           created_at?: string
           post_id?: string
           user_id?: string
+          note?: string | null
         }
         Relationships: [
           {
@@ -1184,6 +1187,7 @@ export type Database = {
         }
         Returns: string
       }
+      set_save_note: { Args: { p_note: string; p_post_id: string }; Returns: undefined }
       save_post: { Args: { p_post_id: string }; Returns: undefined }
       unblock_user: { Args: { p_target: string }; Returns: undefined }
       unfollow_user: { Args: { p_target: string }; Returns: undefined }
