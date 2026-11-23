@@ -26,12 +26,13 @@ type Props = {
   onClose: () => void;
   onEdited: (patch: { caption?: string | null; commentsEnabled?: boolean }) => void;
   onDeleted: () => void;
+  onMuted?: () => void;
 };
 
 type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
-export function PostMenu({ post, caption: currentCaption, commentsEnabled, visible, onClose, onEdited, onDeleted }: Props) {
+export function PostMenu({ post, caption: currentCaption, commentsEnabled, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
   const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const [panel, setPanel] = useState<Panel>('menu');
@@ -64,6 +65,13 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, visib
     if (e) return setError(friendlyError(e.message));
     close();
     onDeleted();
+  }
+
+  async function mute() {
+    const { error: e } = await supabase.rpc('mute_user', { p_target: post.author_id });
+    if (e) return setError(friendlyError(e.message));
+    close();
+    onMuted?.();
   }
 
   async function report(code: string) {
@@ -127,6 +135,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, visib
               ]
             : [
                 { label: 'Share', onPress: share },
+                { label: `Mute ${post.profiles?.username ?? 'account'}`, onPress: () => void mute() },
                 { label: 'Report', onPress: () => setPanel('report'), destructive: true },
               ];
 

@@ -6,6 +6,7 @@ import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 're
 import { type FeedPost, feedSelect, postVideo } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { shareLink } from '../../src/lib/share';
+import { loadMuted } from '../../src/lib/mutes';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/ui/Avatar';
@@ -129,7 +130,8 @@ export default function Reels() {
       if (!profile) return () => setFocused(false);
       void (async () => {
         const { data } = await supabase.from('posts').select(feedSelect).eq('kind', 'video').order('id', { ascending: false }).limit(30);
-        const rows = (data ?? []) as unknown as FeedPost[];
+        const muted = await loadMuted(profile.id);
+        const rows = ((data ?? []) as unknown as FeedPost[]).filter((r) => !muted.has(r.author_id));
         setPosts(rows);
         if (rows.length > 0) {
           const ids = rows.map((r) => r.id);

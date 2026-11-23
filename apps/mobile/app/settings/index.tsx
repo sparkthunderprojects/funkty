@@ -71,6 +71,7 @@ export default function Settings() {
         <View style={{ height: 1, backgroundColor: colors.border }} />
         <Row icon="heart-outline" label="Posts you've liked" onPress={() => router.push('/settings/liked')} />
         <Row icon="bookmark-outline" label="Saved" onPress={() => router.navigate('/profile')} />
+        <Row icon="volume-mute-outline" label="Muted accounts" onPress={() => router.push('/settings/muted')} />
         <Row icon="person-remove-outline" label="Blocked accounts" onPress={() => router.push('/settings/blocked')} />
         <Row icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
         <View style={{ height: 1, backgroundColor: colors.border }} />

@@ -82,6 +82,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           if (patch.commentsEnabled !== undefined) setCommentsEnabled(patch.commentsEnabled);
         }}
         onDeleted={() => (onDeleted ? onDeleted() : setRemoved(true))}
+        onMuted={() => (onDeleted ? onDeleted() : setRemoved(true))}
       />
       {video ? (
         playing ? (

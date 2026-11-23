@@ -5,6 +5,7 @@ import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../src/lib/session';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
+import { loadMuted } from '../../src/lib/mutes';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
 import { Logo } from '../../src/ui/Logo';
@@ -43,7 +44,8 @@ export default function Home() {
     if (error) {
       setFailed(true);
     } else {
-      const rows = (data ?? []) as unknown as FeedPost[];
+      const muted = await loadMuted(profile.id);
+      const rows = ((data ?? []) as unknown as FeedPost[]).filter((r) => !muted.has(r.author_id));
       setPosts(rows);
       if (rows.length > 0) {
         const ids = rows.map((r) => r.id);
