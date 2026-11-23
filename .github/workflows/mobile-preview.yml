@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 20
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_COMMIT: ${{ github.sha }}
     steps:
       - name: Check for EXPO_TOKEN
         run: |

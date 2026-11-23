@@ -32,8 +32,9 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   const [removed, setRemoved] = useState(false);
   const images = postImages(post);
   const video = postVideo(post);
-  const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
+  // A video without a poster frame would show as a black box, so it starts playing, muted.
+  const [playing, setPlaying] = useState(!!video && !video.poster);
+  const [muted, setMuted] = useState(!!video && !video.poster);
   const username = post.profiles?.username ?? 'unknown';
   const comments = post.post_stats?.comment_count ?? 0;
 

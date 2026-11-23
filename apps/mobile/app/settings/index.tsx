@@ -76,6 +76,9 @@ export default function Settings() {
         <Row icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
         <View style={{ height: 1, backgroundColor: colors.border }} />
         <Row icon="log-out-outline" label="Log out" danger onPress={() => void signOut()} />
+        <Text style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', padding: spacing.lg }}>
+          Funkty build {(process.env.EXPO_PUBLIC_COMMIT ?? 'dev').slice(0, 7)}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

@@ -31,6 +31,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Export web build under /funkty
         working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_COMMIT: ${{ github.sha }}
         run: |
           node -e '
           const fs=require("fs");
