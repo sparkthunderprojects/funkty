@@ -4,6 +4,8 @@ import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
+import { useFeedReady } from '../../src/lib/feedReady';
+import { SplashOverlay } from '../../src/ui/Splash';
 import { Avatar } from '../../src/ui/Avatar';
 import { tabBarHeight, useTabBarOffset } from '../../src/ui/layout';
 import { useTheme } from '../../src/theme';
@@ -24,7 +26,9 @@ export default function TabsLayout() {
       .then(({ data }) => setAvatar((data as unknown as { avatar: { storage_key: string } | null } | null)?.avatar?.storage_key ?? null));
   }, [profile]);
 
+  const feedReady = useFeedReady();
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -97,5 +101,7 @@ export default function TabsLayout() {
         }}
       />
     </Tabs>
+    <SplashOverlay ready={feedReady} />
+    </View>
   );
 }

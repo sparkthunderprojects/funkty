@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppHeader } from '../src/ui/AppHeader';
+import { Splash } from '../src/ui/Splash';
 import { useTheme } from '../src/theme';
 import { SessionProvider, useSession } from '../src/lib/session';
 
@@ -16,7 +17,7 @@ const pushed = (title: string) => ({
 
 function Routes() {
   const { loading, session, profile } = useSession();
-  if (loading) return null;
+  if (loading) return <Splash />;
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!session}>

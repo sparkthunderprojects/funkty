@@ -12,6 +12,7 @@ import { useTheme } from '../../src/theme';
 import { Wordmark } from '../../src/ui/Logo';
 import { PostCard } from '../../src/ui/PostCard';
 import { SuggestedPeople } from '../../src/ui/SuggestedPeople';
+import { markFeedReady } from '../../src/lib/feedReady';
 import { StoriesTray } from '../../src/ui/StoriesTray';
 
 type Mode = 'everyone' | 'following';
@@ -69,6 +70,7 @@ export default function Home() {
     const inbox = await supabase.rpc('inbox');
     setUnreadDms((inbox.data ?? []).reduce((n, c) => n + Number(c.unread), 0));
     setLoading(false);
+    markFeedReady();
   }, [mode, profile]);
 
   useFocusEffect(
