@@ -8,6 +8,7 @@ import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/ui/Avatar';
 import { Button } from '../../src/ui/Button';
 import { PostGrid } from '../../src/ui/PostGrid';
+import { type ProfileTab, ProfileTabs } from '../../src/ui/ProfileTabs';
 import { Screen } from '../../src/ui/Screen';
 
 type Person = {
@@ -28,6 +29,7 @@ export default function UserProfile() {
   const [person, setPerson] = useState<Person | null>(null);
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [tab, setTab] = useState<ProfileTab>('posts');
   const [follow, setFollow] = useState<Follow>('none');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -89,6 +91,7 @@ export default function UserProfile() {
   }
 
   const isMe = person.id === me?.id;
+  const shown = tab === 'reels' ? posts.filter((p) => p.kind === 'video') : posts;
   const counts: [string, number, (() => void) | undefined][] = [
     ['Posts', stats.posts, undefined],
     ['Followers', stats.followers, () => router.push({ pathname: '/connections/[username]', params: { username: person.username, type: 'followers' } })],
@@ -156,13 +159,20 @@ export default function UserProfile() {
           )}
         </>
       )}
-      {posts.length > 0 ? (
+      <View style={{ marginHorizontal: -spacing.lg }}>
+        <ProfileTabs tabs={['posts', 'reels']} value={tab} onChange={setTab} />
+      </View>
+      {shown.length > 0 ? (
         <View style={{ marginHorizontal: -spacing.lg }}>
-          <PostGrid posts={posts} />
+          <PostGrid posts={shown} />
         </View>
       ) : (
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
-          {person.is_private && follow !== 'active' && !isMe ? 'This account is private. Follow to see their posts.' : 'No posts yet.'}
+          {person.is_private && follow !== 'active' && !isMe
+            ? 'This account is private. Follow to see their posts.'
+            : tab === 'reels'
+              ? 'No reels yet.'
+              : 'No posts yet.'}
         </Text>
       )}
     </Screen>

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
+import { addRecent, clearRecent, loadRecent, removeRecent } from '../../src/lib/recent';
+import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/ui/Avatar';
@@ -18,6 +20,8 @@ const clean = (s: string) => s.trim().toLowerCase().replace(/[^\p{L}\p{N}._]/gu,
 export default function Search() {
   const { colors, fontSize, spacing } = useTheme();
   const router = useRouter();
+  const { profile } = useSession();
+  const [recent, setRecent] = useState<string[]>([]);
   const [term, setTerm] = useState('');
   const [tab, setTab] = useState<Tab>('top');
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -27,6 +31,14 @@ export default function Search() {
   const [searched, setSearched] = useState(false);
   const query = clean(term);
   const active = query.length >= 2;
+
+  useEffect(() => {
+    if (profile) loadRecent(profile.id).then(setRecent);
+  }, [profile]);
+
+  const remember = (value: string) => {
+    if (profile) addRecent(profile.id, value).then(setRecent);
+  };
 
   useEffect(() => {
     supabase
@@ -96,6 +108,8 @@ export default function Search() {
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={() => remember(term)}
             style={{ flex: 1, color: colors.text, fontSize: 16, outlineStyle: 'none' } as never}
           />
           {term.length > 0 ? (
@@ -132,7 +146,7 @@ export default function Search() {
               ListEmptyComponent={searched ? <Text style={muted}>No accounts found.</Text> : undefined}
               renderItem={({ item }) => (
                 <Link href={{ pathname: '/user/[username]', params: { username: item.username } }} asChild>
-                  <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: 8 }}>
+                  <Pressable accessibilityRole="link" onPress={() => remember(term)} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: 8 }}>
                     <Avatar username={item.username} storageKey={item.avatar?.storage_key} size={56} />
                     <View>
                       <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>{item.username}</Text>
@@ -151,7 +165,10 @@ export default function Search() {
               renderItem={({ item: [tag, count] }) => (
                 <Pressable
                   accessibilityRole="link"
-                  onPress={() => router.push({ pathname: '/tag/[tag]', params: { tag } })}
+                  onPress={() => {
+                    remember(term);
+                    router.push({ pathname: '/tag/[tag]', params: { tag } });
+                  }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: 10 }}
                 >
                   <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
@@ -168,6 +185,42 @@ export default function Search() {
         </>
       ) : (
         <ScrollView keyboardShouldPersistTaps="handled">
+          {recent.length > 0 ? (
+            <View style={{ paddingBottom: spacing.sm }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>
+                <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16 }}>Recent</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear all recent searches"
+                  onPress={() => {
+                    if (profile) clearRecent(profile.id);
+                    setRecent([]);
+                  }}
+                  hitSlop={8}
+                >
+                  <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Clear all</Text>
+                </Pressable>
+              </View>
+              {recent.map((r) => (
+                <View key={r} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
+                  <Pressable accessibilityRole="button" onPress={() => setTerm(r)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 10 }}>
+                    <Ionicons name="time-outline" size={22} color={colors.textMuted} />
+                    <Text style={{ color: colors.text, fontSize: 15 }}>{r}</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${r}`}
+                    onPress={() => {
+                      if (profile) removeRecent(profile.id, r).then(setRecent);
+                    }}
+                    hitSlop={10}
+                  >
+                    <Ionicons name="close" size={20} color={colors.textMuted} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          ) : null}
           {explore.length > 0 ? <PostGrid posts={explore} /> : <Text style={muted}>Nothing to explore yet. Posts from everyone appear here.</Text>}
         </ScrollView>
       )}

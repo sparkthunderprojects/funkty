@@ -23,7 +23,7 @@ import { LibraryGrid, type LibraryPick } from '../../src/ui/LibraryGrid';
 
 type Mode = 'post' | 'story' | 'reel';
 type Step = 'select' | 'edit' | 'details';
-type Item = PickedMedia & { id: string; libId?: string; edit: Edit };
+type Item = PickedMedia & { id: string; libId?: string; edit: Edit; alt?: string };
 
 const modeTitle: Record<Mode, string> = { post: 'New post', story: 'New story', reel: 'New reel' };
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -100,6 +100,10 @@ export default function Create() {
     }
   }
 
+  function setAlt(id: string, alt: string) {
+    setItems((c) => c.map((i) => (i.id === id ? { ...i, alt } : i)));
+  }
+
   function patchEdit(id: string, patch: Partial<Edit>) {
     setItems((c) => c.map((i) => (i.id === id ? { ...i, edit: { ...i.edit, ...patch } } : i)));
   }
@@ -127,7 +131,7 @@ export default function Create() {
         const rendered = [];
         for (const item of items) rendered.push(await renderEdit(item, item.edit, maxImageWidth));
         if (mode === 'story') await publishStoryPhoto(rendered[0]!, profile.id);
-        else await publishPhotos(rendered, profile.id, caption);
+        else await publishPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''));
       }
       const wasVideo = items[0]!.kind === 'video';
       setItems([]);
@@ -272,6 +276,26 @@ export default function Create() {
               <Text style={{ flex: 1, color: colors.textMuted, fontSize: 14 }}>Your story disappears after 24 hours.</Text>
             )}
           </View>
+          {mode === 'post' && items[0]?.kind !== 'video' ? (
+            <View style={{ gap: spacing.sm }}>
+              <Text style={{ color: colors.text, fontWeight: '600' }}>Alt text</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                Describe your {items.length > 1 ? 'photos' : 'photo'} for people who use screen readers.
+              </Text>
+              {items.map((item, n) => (
+                <TextInput
+                  key={item.id}
+                  accessibilityLabel={items.length > 1 ? `Alt text for photo ${n + 1}` : 'Alt text'}
+                  value={item.alt ?? ''}
+                  onChangeText={(t) => setAlt(item.id, t)}
+                  placeholder={items.length > 1 ? `Describe photo ${n + 1}` : 'Write alt text…'}
+                  placeholderTextColor={colors.textMuted}
+                  maxLength={1000}
+                  style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing.sm, color: colors.text, fontSize: 15, outlineStyle: 'none' } as never}
+                />
+              ))}
+            </View>
+          ) : null}
           {busy ? <Text style={{ color: colors.textMuted }}>{items[0]?.kind === 'video' ? 'Uploading video. This can take a moment…' : 'Sharing…'}</Text> : null}
           {error ? (
             <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: 14 }}>

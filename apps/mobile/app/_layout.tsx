@@ -21,6 +21,9 @@ function Routes() {
         <Stack.Screen name="story/[username]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="messages/index" options={{ headerShown: true, title: 'Messages' }} />
         <Stack.Screen name="messages/[username]" options={{ headerShown: true, title: 'Message' }} />
+        <Stack.Screen name="settings/index" options={{ headerShown: true, title: 'Settings' }} />
+        <Stack.Screen name="settings/blocked" options={{ headerShown: true, title: 'Blocked accounts' }} />
+        <Stack.Screen name="settings/liked" options={{ headerShown: true, title: 'Posts you\'ve liked' }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
         <Stack.Screen name="tag/[tag]" options={{ headerShown: true, title: 'Hashtag' }} />
         <Stack.Screen name="connections/[username]" options={{ headerShown: true, title: 'People' }} />

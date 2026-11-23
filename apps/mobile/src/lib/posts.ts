@@ -148,10 +148,14 @@ export async function uploadImage(asset: Picked, userId: string): Promise<string
   return registered.data.id;
 }
 
-export async function publishPhotos(assets: Picked[], userId: string, caption: string): Promise<string> {
+export async function publishPhotos(assets: Picked[], userId: string, caption: string, altTexts: string[] = []): Promise<string> {
   const ids: string[] = [];
   for (const asset of assets) ids.push(await uploadImage(asset, userId));
-  const published = await supabase.rpc('publish_post', { p_caption: caption.trim(), p_media_ids: ids });
+  const published = await supabase.rpc('publish_post', {
+    p_caption: caption.trim(),
+    p_media_ids: ids,
+    p_alt_texts: ids.map((_, n) => (altTexts[n] ?? '').trim().slice(0, 1000)),
+  });
   if (published.error || !published.data) throw new Error(friendlyError(published.error?.message));
   return published.data.id;
 }

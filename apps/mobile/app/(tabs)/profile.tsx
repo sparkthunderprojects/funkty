@@ -11,10 +11,11 @@ import { ActionSheet } from '../../src/ui/ActionSheet';
 import { Button } from '../../src/ui/Button';
 import { shareLink } from '../../src/lib/share';
 import { PostGrid } from '../../src/ui/PostGrid';
+import { type ProfileTab, ProfileTabs } from '../../src/ui/ProfileTabs';
 import { Screen } from '../../src/ui/Screen';
 
 type Stats = { posts: number; followers: number; following: number };
-type Tab = 'posts' | 'saved';
+type Tab = ProfileTab;
 
 export default function Profile() {
   const { profile, signOut } = useSession();
@@ -68,7 +69,7 @@ export default function Profile() {
   );
 
   if (!profile) return null;
-  const shown = tab === 'posts' ? posts : saved;
+  const shown = tab === 'posts' ? posts : tab === 'reels' ? posts.filter((p) => p.kind === 'video') : saved;
   const counts: [string, number | undefined, (() => void) | undefined][] = [
     ['Posts', stats?.posts, undefined],
     ['Followers', stats?.followers, () => router.push({ pathname: '/connections/[username]', params: { username: profile.username, type: 'followers' } })],
@@ -93,6 +94,7 @@ export default function Profile() {
         actions={[
           { label: 'Edit profile', onPress: () => router.push('/edit-profile') },
           { label: 'Share profile', onPress: () => void shareLink(`${profile.username} on Funkty`, `/user/${profile.username}`) },
+          { label: 'Settings', onPress: () => router.push('/settings') },
           { label: 'Log out', onPress: () => void signOut(), destructive: true },
         ]}
       />
@@ -122,31 +124,14 @@ export default function Profile() {
           <Button label="Share profile" variant="secondary" onPress={() => void shareLink(`${profile.username} on Funkty`, `/user/${profile.username}`)} compact />
         </View>
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', borderBottomWidth: 1, borderColor: colors.border }}>
-        {(['posts', 'saved'] as const).map((t) => (
-          <Pressable
-            key={t}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: tab === t }}
-            onPress={() => setTab(t)}
-            style={{ paddingVertical: spacing.sm, borderBottomWidth: 2, borderColor: tab === t ? colors.text : 'transparent', flex: 1, alignItems: 'center' }}
-          >
-            <Ionicons
-              accessibilityLabel={t === 'posts' ? 'Posts' : 'Saved'}
-              name={t === 'posts' ? (tab === t ? 'grid' : 'grid-outline') : tab === t ? 'bookmark' : 'bookmark-outline'}
-              size={24}
-              color={tab === t ? colors.text : colors.textMuted}
-            />
-          </Pressable>
-        ))}
-      </View>
+      <ProfileTabs tabs={['posts', 'reels', 'saved']} value={tab} onChange={setTab} />
       {shown.length > 0 ? (
         <View style={{ marginHorizontal: -spacing.lg }}>
           <PostGrid posts={shown} />
         </View>
       ) : (
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
-          {tab === 'posts' ? 'No posts yet. Tap + to share your first photo.' : 'Posts you save appear here, only visible to you.'}
+          {tab === 'posts' ? 'No posts yet. Tap + to share your first photo.' : tab === 'reels' ? 'Videos you share appear here.' : 'Posts you save appear here, only visible to you.'}
         </Text>
       )}
     </Screen>
