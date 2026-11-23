@@ -7,8 +7,8 @@ import { useTheme } from '../theme';
 /** Profile photo as a rounded square inside a gradient ring. */
 export function RingAvatar({ username, storageKey, size = 96 }: { username: string; storageKey?: string | null; size?: number }) {
   const { colors } = useTheme();
-  const ring = 4;
-  const gap = 3;
+  const ring = size >= 80 ? 4 : 2.5;
+  const gap = size >= 80 ? 3 : 2;
   const inner = size - 2 * (ring + gap);
   const outerRadius = size * 0.3;
   return (

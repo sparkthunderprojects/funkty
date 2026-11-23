@@ -12,6 +12,7 @@ const avatarEmbed = 'avatar:media_assets!profiles_avatar_media_fk(storage_key)';
 export type Author = {
   username: string;
   display_name: string | null;
+  location?: string | null;
   avatar: { storage_key: string } | null;
 };
 
@@ -43,7 +44,7 @@ export type FeedPost = {
   }[];
 };
 
-export const feedSelect = `id, kind, comments_enabled, is_spoiler, is_compare, caption, created_at, author_id, series(id, title), post_credits(position, role, name), post_updates(id, body, created_at), post_tags(status, tagged_id, tagged:profiles!post_tags_tagged_id_fkey(username)), profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
+export const feedSelect = `id, kind, comments_enabled, is_spoiler, is_compare, caption, created_at, author_id, series(id, title), post_credits(position, role, name), post_updates(id, body, created_at), post_tags(status, tagged_id, tagged:profiles!post_tags_tagged_id_fkey(username)), profiles!posts_author_id_fkey(username, display_name, location, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
 export const authorSelect = `username, display_name, ${avatarEmbed}`;
 
 export function mediaUrl(storageKey: string): string {

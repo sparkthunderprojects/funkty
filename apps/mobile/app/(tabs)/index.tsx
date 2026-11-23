@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -79,63 +79,66 @@ export default function Home() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Wordmark height={30} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <Pressable accessibilityRole="link" accessibilityLabel="Create" onPress={() => router.push('/create')} hitSlop={10}>
-            <Feather name="plus" size={28} color={colors.text} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={unreadActivity > 0 ? `Activity, ${unreadActivity} unread` : 'Activity'}
-            onPress={() => router.push('/activity')}
-            hitSlop={10}
-          >
-            <Ionicons name="heart-outline" size={28} color={colors.text} />
-            {unreadActivity > 0 ? (
-              <View style={{ position: 'absolute', top: 0, right: 0, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
-            ) : null}
-          </Pressable>
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={unreadDms > 0 ? `Messages, ${unreadDms} unread` : 'Messages'}
-              onPress={() => router.push('/messages')}
-              hitSlop={10}
-            >
-              <Ionicons name="paper-plane-outline" size={26} color={colors.text} />
-              {unreadDms > 0 ? (
-                <View style={{ position: 'absolute', top: -6, right: -8, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
-                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadDms}</Text>
-                </View>
-              ) : null}
-            </Pressable>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <Wordmark height={26} />
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 999, padding: 3 }}>
+            {(['everyone', 'following'] as const).map((m) => {
+              const on = mode === m;
+              return (
+                <Pressable
+                  key={m}
+                  accessibilityRole="tab"
+                  accessibilityLabel={m === 'everyone' ? 'For You' : 'Following'}
+                  accessibilityState={{ selected: on }}
+                  onPress={() => {
+                    setLoading(true);
+                    setMode(m);
+                  }}
+                  style={{
+                    paddingVertical: 7,
+                    paddingHorizontal: 10,
+                    borderRadius: 999,
+                    backgroundColor: on ? colors.card : 'transparent',
+                    shadowColor: '#000',
+                    shadowOpacity: on ? 0.08 : 0,
+                    shadowRadius: 5,
+                    shadowOffset: { width: 0, height: 2 },
+                    elevation: on ? 2 : 0,
+                  }}
+                >
+                  <Text style={{ color: on ? colors.text : colors.textMuted, fontWeight: on ? '700' : '600', fontSize: 13 }}>
+                    {m === 'everyone' ? 'For You' : 'Following'}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          {(['everyone', 'following'] as const).map((m) => (
-            <Pressable
-              key={m}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: mode === m }}
-              onPress={() => {
-                setLoading(true);
-                setMode(m);
-              }}
-            >
-              <Text
-                style={{
-                  color: mode === m ? colors.text : colors.textMuted,
-                  fontWeight: '700',
-                  fontSize: fontSize.body,
-                  textDecorationLine: mode === m ? 'underline' : 'none',
-                }}
-              >
-                {m === 'everyone' ? 'Everyone' : 'Following'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={unreadActivity > 0 ? `Activity, ${unreadActivity} unread` : 'Activity'}
+          onPress={() => router.push('/activity')}
+          hitSlop={10}
+        >
+          <Ionicons name="notifications-outline" size={25} color={colors.text} />
+          {unreadActivity > 0 ? (
+            <View style={{ position: 'absolute', top: 0, right: 1, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
+          ) : null}
+        </Pressable>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={unreadDms > 0 ? `Messages, ${unreadDms} unread` : 'Messages'}
+          onPress={() => router.push('/messages')}
+          hitSlop={10}
+        >
+          <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
+          {unreadDms > 0 ? (
+            <View style={{ position: 'absolute', top: -6, right: -8, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadDms}</Text>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
       <FlatList
         data={posts}

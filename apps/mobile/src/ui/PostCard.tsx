@@ -7,7 +7,7 @@ import { useSession } from '../lib/session';
 import { shareLink } from '../lib/share';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
-import { Avatar } from './Avatar';
+import { RingAvatar } from './RingAvatar';
 import { Carousel } from './Carousel';
 import { Clip } from './Clip';
 import { Image } from 'expo-image';
@@ -78,12 +78,22 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
 
   if (removed) return null;
   return (
-    <View style={{ gap: spacing.sm, paddingBottom: spacing.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
+    <View style={{ gap: spacing.sm, padding: 12, marginHorizontal: spacing.md, backgroundColor: colors.card, borderRadius: 28, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
           <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-            <Avatar username={username} storageKey={post.profiles?.avatar?.storage_key} size={32} />
-            <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>{username}</Text>
+            <RingAvatar username={username} storageKey={post.profiles?.avatar?.storage_key} size={48} />
+            <View style={{ flex: 1 }}>
+              <Text numberOfLines={1} style={{ color: colors.text, fontSize: 15 }}>
+                <Text style={{ fontWeight: '800' }}>{post.profiles?.display_name || username}</Text>
+                <Text style={{ color: colors.textMuted }}> @{username}</Text>
+              </Text>
+              {post.profiles?.location ? (
+                <Text numberOfLines={1} style={{ color: colors.textMuted, fontSize: 13 }}>
+                  {post.profiles.location}
+                </Text>
+              ) : null}
+            </View>
           </Pressable>
         </Link>
         <Pressable accessibilityRole="button" accessibilityLabel="More options" onPress={() => setMenu(true)} hitSlop={12}>
@@ -119,7 +129,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         onDeleted={() => (onDeleted ? onDeleted() : setRemoved(true))}
         onMuted={() => (onDeleted ? onDeleted() : setRemoved(true))}
       />
-      <View style={{ marginHorizontal: 12, borderRadius: 24, overflow: 'hidden' }}>
+      <View style={{ borderRadius: 20, overflow: 'hidden' }}>
       {video ? (
         playing ? (
           <View>
@@ -168,7 +178,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
       ) : null}
         {spoiler && !revealed ? <SpoilerVeil onReveal={() => setRevealed(true)} /> : null}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: 2 }}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={liked ? 'Unlike' : 'Like'}
@@ -205,7 +215,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color={colors.text} />
         </Pressable>
       </View>
-      <View style={{ paddingHorizontal: spacing.md, gap: 2 }}>
+      <View style={{ paddingHorizontal: 2, gap: 2 }}>
         {series ? (
           <Link href={{ pathname: '/series/[id]', params: { id: series.id } }} asChild>
             <Text accessibilityRole="link" style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>

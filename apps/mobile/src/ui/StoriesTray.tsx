@@ -1,27 +1,29 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { publishStoryPhoto, pickImages, friendlyError } from '../lib/posts';
+import { publishStoryPhoto, pickImages, friendlyError, mediaUrl } from '../lib/posts';
 import { useSession } from '../lib/session';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
-import { StoryRing } from './StoryRing';
-import { Avatar } from './Avatar';
+import { Image } from 'expo-image';
+import { Feather } from '@expo/vector-icons';
+import { RingAvatar } from './RingAvatar';
 
 type Row = {
   id: string;
   author_id: string;
   profiles: { username: string; avatar: { storage_key: string } | null } | null;
+  media_assets: { storage_key: string } | null;
 };
 
-type Ring = { authorId: string; username: string; avatar: string | null; seen: boolean };
+type Ring = { authorId: string; username: string; avatar: string | null; cover: string | null; seen: boolean };
 
 export function StoriesTray() {
   const { colors, fontSize, spacing } = useTheme();
   const { profile } = useSession();
   const router = useRouter();
   const [rings, setRings] = useState<Ring[]>([]);
-  const [mine, setMine] = useState<{ avatar: string | null; has: boolean }>({ avatar: null, has: false });
+  const [mine, setMine] = useState<{ avatar: string | null; cover: string | null; has: boolean }>({ avatar: null, cover: null, has: false });
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -30,7 +32,7 @@ export function StoriesTray() {
       supabase
         .from('stories')
         .select(
-          'id, author_id, profiles!stories_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))',
+          'id, author_id, media_assets(storage_key), profiles!stories_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))',
         )
         .gt('expires_at', new Date().toISOString())
         .order('id', { ascending: false })
@@ -57,6 +59,7 @@ export function StoriesTray() {
             authorId: row.author_id,
             username: row.profiles?.username ?? 'unknown',
             avatar: row.profiles?.avatar?.storage_key ?? null,
+            cover: row.media_assets?.storage_key ?? null,
             seen: !unseen,
           },
         });
@@ -65,6 +68,7 @@ export function StoriesTray() {
     const all = [...byAuthor.values()].map((v) => v.ring);
     setMine({
       avatar: ((me.data as unknown as { avatar: { storage_key: string } | null } | null)?.avatar?.storage_key) ?? null,
+      cover: all.find((r) => r.authorId === profile.id)?.cover ?? null,
       has: all.some((r) => r.authorId === profile.id),
     });
     setRings(all.filter((r) => r.authorId !== profile.id).sort((a, b) => Number(a.seen) - Number(b.seen)));
@@ -93,40 +97,43 @@ export function StoriesTray() {
   }
 
   if (!profile) return null;
-  const size = 76;
+  const w = 100;
+  const h = 144;
+  const card = (cover: string | null, fallback: string, children?: React.ReactNode) => (
+    <View style={{ width: w, height: h, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.surface }}>
+      {cover ? (
+        <Image source={{ uri: mediaUrl(cover) }} style={{ width: w, height: h }} contentFit="cover" />
+      ) : (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.textMuted, fontWeight: '800', fontSize: 34 }}>{fallback.slice(0, 1).toUpperCase()}</Text>
+        </View>
+      )}
+      {children}
+    </View>
+  );
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.md, paddingVertical: spacing.sm }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.sm, paddingVertical: spacing.sm }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={mine.has ? 'View your story' : 'Add to your story'}
         onPress={() => (mine.has ? router.push({ pathname: '/story/[username]', params: { username: profile.username } }) : addStory())}
-        style={{ alignItems: 'center', width: size + 8 }}
+        style={{ alignItems: 'center', width: w }}
       >
-        <StoryRing size={size - 6} state={mine.has ? 'unseen' : 'none'}>
-          <Avatar username={profile.username} storageKey={mine.avatar} size={size - 6} />
-          {!mine.has ? (
-            <Pressable
-              onPress={addStory}
-              accessibilityLabel="Add to your story"
-              style={{
-                position: 'absolute',
-                right: -2,
-                bottom: -2,
-                width: 22,
-                height: 22,
-                borderRadius: 11,
-                backgroundColor: colors.primary,
-                borderWidth: 2,
-                borderColor: colors.background,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: colors.onPrimary, fontWeight: '800', fontSize: 14, lineHeight: 16 }}>+</Text>
-            </Pressable>
-          ) : null}
-        </StoryRing>
-        <Text numberOfLines={1} style={{ color: colors.text, fontSize: fontSize.caption, marginTop: 4 }}>
+        {card(mine.cover ?? mine.avatar, profile.username)}
+        {!mine.has ? (
+          <Pressable
+            onPress={addStory}
+            accessibilityLabel="Add to your story"
+            style={{ position: 'absolute', right: 8, top: h - 36, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Feather name="plus" size={18} color={colors.text} />
+          </Pressable>
+        ) : (
+          <View style={{ position: 'absolute', left: 0, right: 0, top: h - 52, alignItems: 'center' }}>
+            <RingAvatar username={profile.username} storageKey={mine.avatar} size={44} />
+          </View>
+        )}
+        <Text numberOfLines={1} style={{ color: colors.text, fontSize: fontSize.body, marginTop: 6 }}>
           {busy ? 'Sharing…' : 'Your story'}
         </Text>
       </Pressable>
@@ -136,12 +143,13 @@ export function StoriesTray() {
           accessibilityRole="button"
           accessibilityLabel={`View ${r.username}'s story`}
           onPress={() => router.push({ pathname: '/story/[username]', params: { username: r.username } })}
-          style={{ alignItems: 'center', width: size + 8 }}
+          style={{ alignItems: 'center', width: w }}
         >
-          <StoryRing size={size - 6} state={r.seen ? 'seen' : 'unseen'}>
-            <Avatar username={r.username} storageKey={r.avatar} size={size - 6} />
-          </StoryRing>
-          <Text numberOfLines={1} style={{ color: r.seen ? colors.textMuted : colors.text, fontSize: fontSize.caption, marginTop: 4 }}>
+          {card(r.cover ?? r.avatar, r.username)}
+          <View style={{ position: 'absolute', left: 0, right: 0, top: h - 52, alignItems: 'center', opacity: r.seen ? 0.7 : 1 }}>
+            <RingAvatar username={r.username} storageKey={r.avatar} size={44} />
+          </View>
+          <Text numberOfLines={1} style={{ color: r.seen ? colors.textMuted : colors.text, fontSize: fontSize.body, marginTop: 6 }}>
             {r.username}
           </Text>
         </Pressable>
