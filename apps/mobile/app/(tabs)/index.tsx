@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -75,7 +76,7 @@ export default function Home() {
             onPress={() => router.push('/messages')}
             hitSlop={10}
           >
-            <Text style={{ color: colors.text, fontSize: 28 }}>✉</Text>
+            <Ionicons name="paper-plane-outline" size={26} color={colors.text} />
             {unreadDms > 0 ? (
               <View
                 style={{

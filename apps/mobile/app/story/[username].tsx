@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -156,9 +157,9 @@ export default function StoryViewer() {
           <Text style={{ color: '#fff', fontWeight: '700' }}>{username}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)' }}>{timeAgo(current.created_at)}</Text>
           <View style={{ flex: 1 }} />
-          <Text accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={{ color: '#fff', fontSize: 26 }}>
-            ✕
-          </Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="close" size={30} color="#fff" />
+          </Pressable>
         </View>
       </SafeAreaView>
       {isMine ? (

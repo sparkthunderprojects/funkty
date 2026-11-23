@@ -78,7 +78,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       profile,
       refreshProfile: () => loadProfile(session),
       signOut: async () => {
-        await supabase.auth.signOut();
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch {
+          // Fall through: the device session is cleared below either way.
+        }
+        // Clear state ourselves so the app returns to the welcome screen even if the network call failed.
+        setSession(null);
+        setProfile(null);
       },
     }),
     [loading, session, profile, loadProfile],

@@ -4,6 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@funkty/core": "workspace:*",
     "@funkty/db": "workspace:*",
     "@funkty/tokens": "workspace:*",

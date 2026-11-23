@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -37,7 +38,6 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
     if (error) setSaved(!next);
   }
 
-  const icon = { fontSize: 28, color: colors.text } as const;
   return (
     <View style={{ gap: spacing.sm }}>
       <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
@@ -66,11 +66,11 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           onPress={toggleLike}
           hitSlop={8}
         >
-          <Text style={{ ...icon, color: liked ? colors.danger : colors.text }}>{liked ? '♥' : '♡'}</Text>
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={28} color={liked ? colors.danger : colors.text} />
         </Pressable>
         <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
           <Pressable accessibilityRole="link" accessibilityLabel="Comments" hitSlop={8}>
-            <Text style={icon}>💬</Text>
+            <Ionicons name="chatbubble-outline" size={25} color={colors.text} />
           </Pressable>
         </Link>
         <View style={{ flex: 1 }} />
@@ -81,7 +81,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           onPress={toggleSave}
           hitSlop={8}
         >
-          <Text style={{ ...icon, opacity: saved ? 1 : 0.4 }}>🔖</Text>
+          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color={colors.text} />
         </Pressable>
       </View>
       <View style={{ paddingHorizontal: spacing.md, gap: 2 }}>

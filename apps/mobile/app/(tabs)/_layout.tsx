@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 
 export default function TabsLayout() {
@@ -28,7 +28,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: false,
         tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
@@ -38,21 +38,21 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 28 }}>⌂</Text>,
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={26} color={String(color)} />,
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
           title: 'Search',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 28 }}>⌕</Text>,
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'search' : 'search-outline'} size={26} color={String(color)} />,
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
           title: 'Create',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 28 }}>⊕</Text>,
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={26} color={String(color)} />,
         }}
       />
       <Tabs.Screen
@@ -60,14 +60,14 @@ export default function TabsLayout() {
         options={{
           title: 'Activity',
           tabBarBadge: unread > 0 ? unread : undefined,
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 28 }}>♡</Text>,
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'heart' : 'heart-outline'} size={26} color={String(color)} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 28 }}>☺</Text>,
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'person' : 'person-outline'} size={26} color={String(color)} />,
         }}
       />
     </Tabs>
