@@ -1,0 +1,56 @@
+name: Deploy web app to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Export web build under /funkty
+        working-directory: apps/mobile
+        run: |
+          node -e '
+          const fs=require("fs");
+          const a=JSON.parse(fs.readFileSync("app.json","utf8"));
+          a.expo.experiments={...a.expo.experiments,baseUrl:"/funkty"};
+          a.expo.web={...a.expo.web,output:"single"};
+          fs.writeFileSync("app.json",JSON.stringify(a,null,2));'
+          CI=1 npx expo export --platform web --output-dir dist
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/mobile/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
