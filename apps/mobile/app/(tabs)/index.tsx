@@ -34,7 +34,7 @@ export default function Home() {
   const load = useCallback(async () => {
     if (!profile) return;
     setFailed(false);
-    let query = supabase.from('posts').select(feedSelect).order('id', { ascending: false }).limit(30);
+    let query = supabase.from('posts').select(feedSelect).is('archived_at', null).order('id', { ascending: false }).limit(30);
     if (mode === 'following') {
       const follows = await supabase
         .from('follows')

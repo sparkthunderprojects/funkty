@@ -22,6 +22,9 @@ export type FeedPost = {
   comments_enabled: boolean;
   is_spoiler: boolean;
   is_compare: boolean;
+  pinned_at: string | null;
+  archived_at: string | null;
+  hide_like_count: boolean;
   series: { id: string; title: string } | null;
   post_credits: { position: number; role: string; name: string }[];
   post_updates: { id: string; body: string; created_at: string }[];
@@ -44,7 +47,7 @@ export type FeedPost = {
   }[];
 };
 
-export const feedSelect = `id, kind, comments_enabled, is_spoiler, is_compare, caption, created_at, author_id, series(id, title), post_credits(position, role, name), post_updates(id, body, created_at), post_tags(status, tagged_id, tagged:profiles!post_tags_tagged_id_fkey(username)), profiles!posts_author_id_fkey(username, display_name, location, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
+export const feedSelect = `id, kind, comments_enabled, is_spoiler, is_compare, pinned_at, archived_at, hide_like_count, caption, created_at, author_id, series(id, title), post_credits(position, role, name), post_updates(id, body, created_at), post_tags(status, tagged_id, tagged:profiles!post_tags_tagged_id_fkey(username)), profiles!posts_author_id_fkey(username, display_name, location, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
 export const authorSelect = `username, display_name, ${avatarEmbed}`;
 
 export function mediaUrl(storageKey: string): string {
@@ -112,6 +115,8 @@ export function friendlyError(message: string | undefined): string {
     case 'too_many_collections':
     case 'too_many_series':
       return 'You have reached the limit of 50.';
+    case 'too_many_pins':
+      return 'You can pin up to 3 posts. Unpin one first.';
     case 'too_many_tags':
       return 'A post can tag up to 10 people.';
     case 'invalid_target':

@@ -49,6 +49,8 @@ export default function Profile() {
         .from('posts')
         .select(feedSelect)
         .eq('author_id', profile.id)
+        .is('archived_at', null)
+        .order('pinned_at', { ascending: false, nullsFirst: false })
         .order('id', { ascending: false })
         .limit(60)
         .then(({ data }) => setPosts((data ?? []) as unknown as FeedPost[]));

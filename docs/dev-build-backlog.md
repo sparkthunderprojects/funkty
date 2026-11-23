@@ -50,6 +50,10 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
   - Unused-index notices are expected while there is almost no data. Review again with real traffic.
 - **Expo token cleanup:** rotate or remove the access token used during setup.
 
+## Ideas not built yet (buildable now)
+
+- Close friends list for stories, story replies and reactions, comment likes, message reactions and unsend, story archive, scheduled posts and drafts.
+
 ## Blocked on a decision
 
 - **Links in captions and a followers export:** held back until the safety work exists (link scanning, abuse limits).

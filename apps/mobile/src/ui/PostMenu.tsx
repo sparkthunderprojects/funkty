@@ -26,6 +26,8 @@ type Props = {
   commentsEnabled: boolean;
   spoiler: boolean;
   compare: boolean;
+  pinned: boolean;
+  hideLikes: boolean;
   imageCount: number;
   series: { id: string; title: string } | null;
   credits: { position: number; role: string; name: string }[];
@@ -38,6 +40,8 @@ type Props = {
     commentsEnabled?: boolean;
     spoiler?: boolean;
     compare?: boolean;
+    pinned?: boolean;
+    hideLikes?: boolean;
     series?: { id: string; title: string } | null;
     credits?: { position: number; role: string; name: string }[];
     addedUpdate?: { id: string; body: string; created_at: string };
@@ -50,7 +54,7 @@ type Props = {
 type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'tags' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
-export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
+export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, pinned, hideLikes, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
   const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const [panel, setPanel] = useState<Panel>('menu');
@@ -128,6 +132,26 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   async function removeMyTag() {
     const { error: e } = await supabase.rpc('respond_tag', { p_post_id: post.id, p_accept: false });
     if (!e) onEdited({ tags: (post.post_tags ?? []).filter((t) => t.tagged_id !== profile?.id) });
+  }
+
+  async function togglePin() {
+    const next = !pinned;
+    const { error: e } = await supabase.rpc('set_post_pinned', { p_post_id: post.id, p_on: next });
+    if (e) return setError(friendlyError(e.message));
+    onEdited({ pinned: next });
+  }
+
+  async function toggleHideLikes() {
+    const next = !hideLikes;
+    const { error: e } = await supabase.rpc('set_post_hide_likes', { p_post_id: post.id, p_on: next });
+    if (!e) onEdited({ hideLikes: next });
+  }
+
+  async function archive() {
+    const { error: e } = await supabase.rpc('set_post_archived', { p_post_id: post.id, p_on: true });
+    if (e) return setError(friendlyError(e.message));
+    close();
+    onDeleted();
   }
 
   async function remove() {
@@ -282,6 +306,8 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: commentsEnabled ? 'Turn off commenting' : 'Turn on commenting', onPress: then(() => void toggleComments()) },
                 { label: spoiler ? 'Remove spoiler mark' : 'Mark as spoiler', onPress: then(() => void toggleSpoiler()) },
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
+                { label: pinned ? 'Unpin from your profile' : 'Pin to your profile', onPress: then(() => void togglePin()) },
+                { label: hideLikes ? 'Show like count' : 'Hide like count', onPress: then(() => void toggleHideLikes()) },
                 { label: 'Tag people', onPress: () => setPanel('tags') },
                 { label: 'Post an update', onPress: () => { setUpdateText(''); setPanel('update'); } },
                 { label: series ? `Series: ${series.title}` : 'Add to a series', onPress: () => setPanel('series') },
@@ -289,6 +315,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 ...(imageCount === 2 ? [{ label: compare ? 'Show as normal photos' : 'Show as before and after', onPress: then(() => void toggleCompare()) }] : []),
                 { label: 'Save to collection', onPress: () => setPanel('collections') },
                 { label: 'Share', onPress: share },
+                { label: 'Archive', onPress: then(() => void archive()) },
                 { label: 'Delete', onPress: () => setPanel('confirm-delete'), destructive: true },
               ]
             : [

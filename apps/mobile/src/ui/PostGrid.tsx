@@ -53,6 +53,9 @@ export function PostGrid({ posts }: { posts: FeedPost[] }) {
                     >
                       {image ? <Image source={{ uri: image.url }} style={{ width: size, height }} contentFit="cover" /> : null}
                       {post.is_spoiler ? <SpoilerVeil compact /> : null}
+                      {post.pinned_at ? (
+                        <Ionicons name="pin" size={14} color="#fff" style={{ position: 'absolute', top: 8, left: 8 }} />
+                      ) : null}
                       {post.kind === 'video' ? (
                         <Ionicons name="play" size={16} color="#fff" style={{ position: 'absolute', top: 8, right: 8 }} />
                       ) : post.kind === 'carousel' ? (

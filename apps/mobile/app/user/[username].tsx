@@ -55,7 +55,7 @@ export default function UserProfile() {
       const [s, f, ps, tg, st] = await Promise.all([
         supabase.from('profile_stats').select('posts_count, followers_count, following_count').eq('user_id', p.id).maybeSingle(),
         supabase.from('follows').select('state').eq('follower_id', me.id).eq('followee_id', p.id).maybeSingle(),
-        supabase.from('posts').select(feedSelect).eq('author_id', p.id).order('id', { ascending: false }).limit(60),
+        supabase.from('posts').select(feedSelect).eq('author_id', p.id).is('archived_at', null).order('pinned_at', { ascending: false, nullsFirst: false }).order('id', { ascending: false }).limit(60),
         supabase.from('post_tags').select(`created_at, posts(${feedSelect})`).eq('tagged_id', p.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(60),
         supabase.from('stories').select('id', { count: 'exact', head: true }).eq('author_id', p.id).gt('expires_at', new Date().toISOString()),
       ]);

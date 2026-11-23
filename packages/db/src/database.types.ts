@@ -648,6 +648,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          archived_at: string | null
           author_id: string
           caption: string | null
           comments_enabled: boolean
@@ -657,8 +658,10 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           edited_at: string | null
+          hide_like_count: boolean
           id: string
           kind: string
+          pinned_at: string | null
           status: string
           updated_at: string
           visibility: string
@@ -673,6 +676,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
+          hide_like_count?: boolean
           id?: string
           kind: string
           status?: string
@@ -680,6 +684,7 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          archived_at?: string | null
           author_id?: string
           caption?: string | null
           comments_enabled?: boolean
@@ -689,8 +694,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
+          hide_like_count?: boolean
           id?: string
           kind?: string
+          pinned_at?: string | null
           status?: string
           updated_at?: string
           visibility?: string
@@ -1171,6 +1178,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_post_pinned: { Args: { p_post_id: string; p_on: boolean }; Returns: undefined }
+      set_post_archived: { Args: { p_post_id: string; p_on: boolean }; Returns: undefined }
+      set_post_hide_likes: { Args: { p_post_id: string; p_on: boolean }; Returns: undefined }
       create_highlight: { Args: { p_title: string; p_story_id: string }; Returns: Database['public']['Tables']['highlights']['Row'] }
       add_story_to_highlight: { Args: { p_highlight_id: string; p_story_id: string }; Returns: undefined }
       remove_highlight_item: { Args: { p_highlight_id: string; p_media_id: string }; Returns: undefined }

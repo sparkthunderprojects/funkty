@@ -40,6 +40,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   const [compare, setCompare] = useState(post.is_compare);
   const [series, setSeries] = useState(post.series);
   const [credits, setCredits] = useState(post.post_credits ?? []);
+  const [pinned, setPinned] = useState(!!post.pinned_at);
+  const [hideLikes, setHideLikes] = useState(post.hide_like_count);
   const [tags, setTags] = useState(post.post_tags ?? []);
   const [updates, setUpdates] = useState(post.post_updates ?? []);
   const sortedUpdates = [...updates].sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -106,6 +108,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         commentsEnabled={commentsEnabled}
         spoiler={spoiler}
         compare={compare}
+        pinned={pinned}
+        hideLikes={hideLikes}
         imageCount={images.length}
         series={series}
         credits={credits}
@@ -120,6 +124,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           if (patch.series !== undefined) setSeries(patch.series);
           if (patch.credits !== undefined) setCredits(patch.credits);
           if (patch.tags !== undefined) setTags(patch.tags);
+          if (patch.pinned !== undefined) setPinned(patch.pinned);
+          if (patch.hideLikes !== undefined) setHideLikes(patch.hideLikes);
           if (patch.addedUpdate) setUpdates((u) => [...u, patch.addedUpdate!]);
           if (patch.spoiler !== undefined) {
             setSpoiler(patch.spoiler);
@@ -188,7 +194,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           style={countStyle}
         >
           <Ionicons name={liked ? 'heart' : 'heart-outline'} size={27} color={liked ? colors.danger : colors.text} />
-          <Text style={countText}>{compact(likes)}</Text>
+          {hideLikes && !isAuthor ? null : <Text style={countText}>{compact(likes)}</Text>}
         </Pressable>
         {commentsEnabled ? <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
           <Pressable accessibilityRole="link" accessibilityLabel="Comments" hitSlop={8} style={countStyle}>

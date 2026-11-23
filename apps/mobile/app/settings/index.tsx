@@ -100,6 +100,7 @@ export default function Settings() {
         <Row icon="heart-outline" label="Posts you've liked" onPress={() => router.push('/settings/liked')} />
         <Row icon="stats-chart-outline" label="Your week on Funkty" onPress={() => router.push('/settings/week')} />
         <Row icon="document-text-outline" label="Your private notes" onPress={() => router.push('/settings/notes')} />
+        <Row icon="archive-outline" label="Archive" onPress={() => router.push('/settings/archive')} />
         <Row icon="albums-outline" label="Collections" onPress={() => router.push('/collections')} />
         <Row icon="bookmark-outline" label="Saved" onPress={() => router.navigate('/profile')} />
         <Row icon="volume-mute-outline" label="Muted accounts" onPress={() => router.push('/settings/muted')} />

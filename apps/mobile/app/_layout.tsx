@@ -35,6 +35,7 @@ function Routes() {
         <Stack.Screen name="messages/[username]" options={pushed('Message')} />
         <Stack.Screen name="settings/index" options={pushed('Settings')} />
         <Stack.Screen name="settings/blocked" options={pushed('Blocked accounts')} />
+        <Stack.Screen name="settings/archive" options={pushed('Archive')} />
         <Stack.Screen name="settings/muted" options={pushed('Muted accounts')} />
         <Stack.Screen name="settings/liked" options={pushed('Posts you\'ve liked')} />
         <Stack.Screen name="series/[id]" options={pushed('Series')} />
