@@ -1,5 +1,6 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { readFile } from './files';
 import { makePoster, probeDurationMs } from './poster';
 import { supabase } from './supabase';
 
@@ -128,16 +129,16 @@ export async function uploadImage(asset: Picked, userId: string): Promise<string
     compress: 0.85,
     format: ImageManipulator.SaveFormat.JPEG,
   });
-  const blob = await (await fetch(out.uri)).blob();
+  const file = await readFile(out.uri);
   const key = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.jpg`;
 
-  const upload = await supabase.storage.from('media').upload(key, blob, { contentType: 'image/jpeg' });
-  if (upload.error) throw new Error('Upload failed. Check your connection and try again.');
+  const upload = await supabase.storage.from('media').upload(key, file.data, { contentType: 'image/jpeg' });
+  if (upload.error) throw new Error(`Upload failed (${upload.error.message}). Check your connection and try again.`);
 
   const registered = await supabase.rpc('register_image', {
     p_storage_key: key,
     p_mime_type: 'image/jpeg',
-    p_bytes: blob.size,
+    p_bytes: file.size,
     p_width: out.width,
     p_height: out.height,
   });
@@ -210,23 +211,23 @@ const videoTypes: Record<string, string> = {
 
 /** Uploads a video and its poster frame to the caller's own folder and registers it. Returns the media id. */
 export async function uploadVideo(video: PickedMedia, userId: string): Promise<string> {
-  const blob = await (await fetch(video.uri)).blob();
-  const mime = videoTypes[blob.type] ? blob.type : video.mime && videoTypes[video.mime] ? video.mime : 'video/mp4';
-  if (blob.size > maxVideoBytes) throw new Error('That video is too large. Videos can be up to 50 MB.');
+  const file = await readFile(video.uri);
+  const mime = videoTypes[file.type] ? file.type : video.mime && videoTypes[video.mime] ? video.mime : 'video/mp4';
+  if (file.size > maxVideoBytes) throw new Error('That video is too large. Videos can be up to 50 MB.');
   const durationMs = (await probeDurationMs(video.uri)) || video.durationMs || 0;
   if (durationMs > maxVideoMs) throw new Error('That video is too long. Videos can be up to 90 seconds.');
 
   const stem = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const key = `${stem}.${videoTypes[mime]}`;
-  const up = await supabase.storage.from('media').upload(key, blob, { contentType: mime });
-  if (up.error) throw new Error('Upload failed. Check your connection and try again.');
+  const up = await supabase.storage.from('media').upload(key, file.data, { contentType: mime });
+  if (up.error) throw new Error(`Upload failed (${up.error.message}). Check your connection and try again.`);
 
   let posterKey: string | null = null;
   let width = video.width;
   let height = video.height;
   const poster = await makePoster(video.uri);
   if (poster) {
-    const posterUp = await supabase.storage.from('media').upload(`${stem}-poster.jpg`, poster.blob, { contentType: 'image/jpeg' });
+    const posterUp = await supabase.storage.from('media').upload(`${stem}-poster.jpg`, poster.body, { contentType: 'image/jpeg' });
     if (!posterUp.error) posterKey = `${stem}-poster.jpg`;
     width = width || poster.width;
     height = height || poster.height;
@@ -235,7 +236,7 @@ export async function uploadVideo(video: PickedMedia, userId: string): Promise<s
   const registered = await supabase.rpc('register_video', {
     p_storage_key: key,
     p_mime_type: mime,
-    p_bytes: blob.size,
+    p_bytes: file.size,
     p_duration_ms: Math.max(durationMs, 500),
     p_width: width || undefined,
     p_height: height || undefined,

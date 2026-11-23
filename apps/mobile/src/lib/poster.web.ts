@@ -18,7 +18,7 @@ export function probeDurationMs(uri: string): Promise<number | undefined> {
   });
 }
 
-export type Poster = { blob: Blob; width: number; height: number };
+export type Poster = { body: Blob; width: number; height: number };
 
 /** A still frame from near the start of the video, drawn to a canvas. Null if the browser cannot decode it. */
 export function makePoster(uri: string): Promise<Poster | null> {
@@ -40,7 +40,7 @@ export function makePoster(uri: string): Promise<Poster | null> {
       const ctx = canvas.getContext('2d');
       if (!ctx) return fail();
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => resolve(blob ? { blob, width: canvas.width, height: canvas.height } : null), 'image/jpeg', 0.8);
+      canvas.toBlob((blob) => resolve(blob ? { body: blob, width: canvas.width, height: canvas.height } : null), 'image/jpeg', 0.8);
     };
     video.src = uri;
   });
