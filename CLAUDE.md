@@ -12,6 +12,10 @@ Funkty is a social platform: Next.js web, Expo native (iOS/Android), Supabase ba
 
 Run typecheck and tests before every push.
 
+## Backlog
+
+`docs/dev-build-backlog.md` lists what cannot be built or tested in Expo Go and is waiting for an EAS development build. Whenever you defer something for that reason (or any other reason in that file), add it there in the same commit, and tick off or remove items you complete.
+
 ## Layout
 
 - `apps/web` Next.js App Router (desktop experience). `apps/mobile` Expo (iOS and Android).
