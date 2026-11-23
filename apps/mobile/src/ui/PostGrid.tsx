@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { type FeedPost, firstImage } from '../lib/posts';
+import { SpoilerVeil } from './SpoilerVeil';
 import { useTheme } from '../theme';
 
 const columns = 3;
@@ -32,6 +33,7 @@ export function PostGrid({ posts }: { posts: FeedPost[] }) {
                   {image ? (
                     <Image source={{ uri: image.url }} style={{ width: size, height: size }} contentFit="cover" />
                   ) : null}
+                  {post.is_spoiler ? <SpoilerVeil compact /> : null}
                   {post.kind === 'video' ? (
                     <Ionicons name="play" size={18} color="#fff" style={{ position: 'absolute', top: 6, right: 6 }} />
                   ) : post.kind === 'carousel' ? (

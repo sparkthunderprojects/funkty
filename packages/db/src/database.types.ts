@@ -651,6 +651,7 @@ export type Database = {
           author_id: string
           caption: string | null
           comments_enabled: boolean
+          is_spoiler: boolean
           created_at: string
           deleted_at: string | null
           edited_at: string | null
@@ -664,6 +665,7 @@ export type Database = {
           author_id: string
           caption?: string | null
           comments_enabled?: boolean
+          is_spoiler?: boolean
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
@@ -677,6 +679,7 @@ export type Database = {
           author_id?: string
           caption?: string | null
           comments_enabled?: boolean
+          is_spoiler?: boolean
           created_at?: string
           deleted_at?: string | null
           edited_at?: string | null
@@ -1046,12 +1049,14 @@ export type Database = {
         Args: {
           p_caption: string
           p_comments_enabled?: boolean
+          p_is_spoiler?: boolean
           p_post_id: string
         }
         Returns: {
           author_id: string
           caption: string | null
           comments_enabled: boolean
+          is_spoiler: boolean
           created_at: string
           deleted_at: string | null
           edited_at: string | null
@@ -1076,6 +1081,7 @@ export type Database = {
           p_alt_texts?: string[]
           p_caption: string
           p_comments_enabled?: boolean
+          p_is_spoiler?: boolean
           p_media_ids: string[]
           p_visibility?: string
         }
@@ -1083,6 +1089,7 @@ export type Database = {
           author_id: string
           caption: string | null
           comments_enabled: boolean
+          is_spoiler: boolean
           created_at: string
           deleted_at: string | null
           edited_at: string | null

@@ -11,6 +11,7 @@ import { Carousel } from './Carousel';
 import { Clip } from './Clip';
 import { Image } from 'expo-image';
 import { Glass } from './Glass';
+import { SpoilerVeil } from './SpoilerVeil';
 import { PostMenu } from './PostMenu';
 import { RichText } from './RichText';
 
@@ -30,10 +31,12 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   const [caption, setCaption] = useState(post.caption);
   const [commentsEnabled, setCommentsEnabled] = useState(post.comments_enabled);
   const [removed, setRemoved] = useState(false);
+  const [spoiler, setSpoiler] = useState(post.is_spoiler);
+  const [revealed, setRevealed] = useState(false);
   const images = postImages(post);
   const video = postVideo(post);
   // A video without a poster frame would show as a black box, so it starts playing, muted.
-  const [playing, setPlaying] = useState(!!video && !video.poster);
+  const [playing, setPlaying] = useState(!!video && !video.poster && !post.is_spoiler);
   const [muted, setMuted] = useState(!!video && !video.poster);
   const username = post.profiles?.username ?? 'unknown';
   const comments = post.post_stats?.comment_count ?? 0;
@@ -77,15 +80,21 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         post={post}
         caption={caption}
         commentsEnabled={commentsEnabled}
+        spoiler={spoiler}
         visible={menu}
         onClose={() => setMenu(false)}
         onEdited={(patch) => {
           if (patch.caption !== undefined) setCaption(patch.caption);
           if (patch.commentsEnabled !== undefined) setCommentsEnabled(patch.commentsEnabled);
+          if (patch.spoiler !== undefined) {
+            setSpoiler(patch.spoiler);
+            setRevealed(false);
+          }
         }}
         onDeleted={() => (onDeleted ? onDeleted() : setRemoved(true))}
         onMuted={() => (onDeleted ? onDeleted() : setRemoved(true))}
       />
+      <View>
       {video ? (
         playing ? (
           <View>
@@ -130,6 +139,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
           }}
         />
       ) : null}
+        {spoiler && !revealed ? <SpoilerVeil onReveal={() => setRevealed(true)} /> : null}
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md }}>
         <Pressable
           accessibilityRole="button"

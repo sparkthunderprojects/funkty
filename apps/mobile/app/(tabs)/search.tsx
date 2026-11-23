@@ -57,7 +57,7 @@ export default function Search() {
     let cancelled = false;
     const timer = setTimeout(async () => {
       const wordsOnly = query.replace(/[._]/g, '');
-      const [people, byCaption, byTag] = await Promise.all([
+      const [people, byCaption, byTag, byAlt] = await Promise.all([
         supabase
           .from('profiles')
           .select('id, username, display_name, avatar:media_assets!profiles_avatar_media_fk(storage_key)')
@@ -66,10 +66,21 @@ export default function Search() {
           .limit(30),
         supabase.from('posts').select(feedSelect).ilike('caption', `%${wordsOnly || query}%`).order('id', { ascending: false }).limit(60),
         supabase.from('posts').select('caption').ilike('caption', `%#${wordsOnly || query}%`).order('id', { ascending: false }).limit(100),
+        // Photos are also found by what their alt text describes.
+        supabase.from('post_media').select('post_id').ilike('alt_text', `%${wordsOnly || query}%`).limit(60),
       ]);
+      const altIds = [...new Set((byAlt.data ?? []).map((r) => r.post_id))];
+      const altPosts = altIds.length
+        ? await supabase.from('posts').select(feedSelect).in('id', altIds).order('id', { ascending: false })
+        : { data: [] };
       if (cancelled) return;
       setAccounts((people.data ?? []) as unknown as Account[]);
-      setPosts((byCaption.data ?? []) as unknown as FeedPost[]);
+      const seen = new Set<string>();
+      setPosts(
+        [...((byCaption.data ?? []) as unknown as FeedPost[]), ...((altPosts.data ?? []) as unknown as FeedPost[])].filter((p) =>
+          seen.has(p.id) ? false : (seen.add(p.id), true),
+        ),
+      );
       setTagRows((byTag.data ?? []).map((r) => r.caption ?? ''));
       setSearched(true);
     }, 250);

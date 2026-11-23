@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Switch, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type Aspect, type Edit, baseKey, defaultEdit, renderEdit } from '../../src/lib/editing';
 import { filters } from '../../src/lib/filters';
@@ -39,6 +39,7 @@ export default function Create() {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [multiple, setMultiple] = useState(false);
   const [caption, setCaption] = useState('');
+  const [spoiler, setSpoiler] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [libraryDenied, setLibraryDenied] = useState(false);
@@ -126,16 +127,17 @@ export default function Create() {
     setError(null);
     try {
       if (items[0]!.kind === 'video') {
-        await publishVideo(items[0]!, profile.id, caption);
+        await publishVideo(items[0]!, profile.id, caption, spoiler);
       } else {
         const rendered = [];
         for (const item of items) rendered.push(await renderEdit(item, item.edit, maxImageWidth));
         if (mode === 'story') await publishStoryPhoto(rendered[0]!, profile.id);
-        else await publishPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''));
+        else await publishPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''), spoiler);
       }
       const wasVideo = items[0]!.kind === 'video';
       setItems([]);
       setCaption('');
+      setSpoiler(false);
       setStep('select');
       router.navigate(wasVideo ? '/reels' : '/');
     } catch (e) {
@@ -276,6 +278,15 @@ export default function Create() {
               <Text style={{ flex: 1, color: colors.textMuted, fontSize: 14 }}>Your story disappears after 24 hours.</Text>
             )}
           </View>
+          {mode !== 'story' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontWeight: '600' }}>Mark as spoiler</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>People tap to reveal it. Use it for results, plot twists and surprises.</Text>
+              </View>
+              <Switch accessibilityLabel="Mark as spoiler" value={spoiler} onValueChange={setSpoiler} />
+            </View>
+          ) : null}
           {mode === 'post' && items[0]?.kind !== 'video' ? (
             <View style={{ gap: spacing.sm }}>
               <Text style={{ color: colors.text, fontWeight: '600' }}>Alt text</Text>

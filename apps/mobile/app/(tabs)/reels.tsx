@@ -9,6 +9,7 @@ import { shareLink } from '../../src/lib/share';
 import { loadMuted } from '../../src/lib/mutes';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
+import { SpoilerVeil } from '../../src/ui/SpoilerVeil';
 import { Glass } from '../../src/ui/Glass';
 import { Avatar } from '../../src/ui/Avatar';
 import { Clip } from '../../src/ui/Clip';
@@ -31,6 +32,9 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
   const [saved, setSaved] = useState(initialSaved);
   const [likes, setLikes] = useState(post.post_stats?.like_count ?? 0);
   const username = post.profiles?.username ?? 'unknown';
+
+  const [revealed, setRevealed] = useState(false);
+  const veiled = post.is_spoiler && !revealed;
 
   async function toggleLike() {
     const next = !liked;
@@ -58,7 +62,7 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
         <Clip
           uri={video.url}
           poster={video.poster}
-          active={active}
+          active={active && !veiled}
           muted={muted}
           onDoubleTap={() => {
             if (!liked) void toggleLike();
@@ -68,6 +72,7 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
       ) : video.poster ? (
         <Image source={{ uri: video.poster }} contentFit="cover" style={{ width: '100%', height }} />
       ) : null}
+      {veiled ? <SpoilerVeil onReveal={() => setRevealed(true)} /> : null}
       <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom: 28 }}>
         <Glass radius={30} padding={10} intensity={35} style={{ width: 58 }}>
         <View style={{ gap: 20, alignItems: 'center' }}>

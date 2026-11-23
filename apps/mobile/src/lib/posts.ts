@@ -19,6 +19,7 @@ export type FeedPost = {
   id: string;
   kind: string;
   comments_enabled: boolean;
+  is_spoiler: boolean;
   caption: string | null;
   created_at: string;
   author_id: string;
@@ -37,7 +38,7 @@ export type FeedPost = {
   }[];
 };
 
-export const feedSelect = `id, kind, comments_enabled, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
+export const feedSelect = `id, kind, comments_enabled, is_spoiler, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
 export const authorSelect = `username, display_name, ${avatarEmbed}`;
 
 export function mediaUrl(storageKey: string): string {
@@ -149,13 +150,14 @@ export async function uploadImage(asset: Picked, userId: string): Promise<string
   return registered.data.id;
 }
 
-export async function publishPhotos(assets: Picked[], userId: string, caption: string, altTexts: string[] = []): Promise<string> {
+export async function publishPhotos(assets: Picked[], userId: string, caption: string, altTexts: string[] = [], isSpoiler = false): Promise<string> {
   const ids: string[] = [];
   for (const asset of assets) ids.push(await uploadImage(asset, userId));
   const published = await supabase.rpc('publish_post', {
     p_caption: caption.trim(),
     p_media_ids: ids,
     p_alt_texts: ids.map((_, n) => (altTexts[n] ?? '').trim().slice(0, 1000)),
+    p_is_spoiler: isSpoiler,
   });
   if (published.error || !published.data) throw new Error(friendlyError(published.error?.message));
   return published.data.id;
@@ -253,9 +255,9 @@ export async function uploadVideo(video: PickedMedia, userId: string): Promise<s
   return registered.data.id;
 }
 
-export async function publishVideo(video: PickedMedia, userId: string, caption: string): Promise<string> {
+export async function publishVideo(video: PickedMedia, userId: string, caption: string, isSpoiler = false): Promise<string> {
   const id = await uploadVideo(video, userId);
-  const published = await supabase.rpc('publish_post', { p_caption: caption.trim(), p_media_ids: [id] });
+  const published = await supabase.rpc('publish_post', { p_caption: caption.trim(), p_media_ids: [id], p_is_spoiler: isSpoiler });
   if (published.error || !published.data) throw new Error(friendlyError(published.error?.message));
   return published.data.id;
 }

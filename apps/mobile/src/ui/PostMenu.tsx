@@ -22,9 +22,10 @@ type Props = {
   post: FeedPost;
   caption: string | null;
   commentsEnabled: boolean;
+  spoiler: boolean;
   visible: boolean;
   onClose: () => void;
-  onEdited: (patch: { caption?: string | null; commentsEnabled?: boolean }) => void;
+  onEdited: (patch: { caption?: string | null; commentsEnabled?: boolean; spoiler?: boolean }) => void;
   onDeleted: () => void;
   onMuted?: () => void;
 };
@@ -32,7 +33,7 @@ type Props = {
 type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
-export function PostMenu({ post, caption: currentCaption, commentsEnabled, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
+export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
   const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const [panel, setPanel] = useState<Panel>('menu');
@@ -58,6 +59,12 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, visib
     const next = !commentsEnabled;
     const { error: e } = await supabase.rpc('edit_post', { p_post_id: post.id, p_caption: currentCaption ?? '', p_comments_enabled: next });
     if (!e) onEdited({ commentsEnabled: next });
+  }
+
+  async function toggleSpoiler() {
+    const next = !spoiler;
+    const { error: e } = await supabase.rpc('edit_post', { p_post_id: post.id, p_caption: currentCaption ?? '', p_is_spoiler: next });
+    if (!e) onEdited({ spoiler: next });
   }
 
   async function remove() {
@@ -130,6 +137,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, visib
             ? [
                 { label: 'Edit caption', onPress: () => { setCaption(currentCaption ?? ''); setPanel('edit'); } },
                 { label: commentsEnabled ? 'Turn off commenting' : 'Turn on commenting', onPress: then(() => void toggleComments()) },
+                { label: spoiler ? 'Remove spoiler mark' : 'Mark as spoiler', onPress: then(() => void toggleSpoiler()) },
                 { label: 'Share', onPress: share },
                 { label: 'Delete', onPress: () => setPanel('confirm-delete'), destructive: true },
               ]
