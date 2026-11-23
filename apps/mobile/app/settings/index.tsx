@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { type AppearancePref, setAppearance, useAppearance } from '../../src/lib/appearance';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
@@ -26,6 +27,7 @@ export default function Settings() {
   const { colors, spacing } = useTheme();
   const router = useRouter();
   const { profile, refreshProfile, signOut } = useSession();
+  const appearance = useAppearance();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (!profile) return null;
@@ -67,6 +69,32 @@ export default function Settings() {
               : 'Anyone on Funkty can see your posts and stories.'}
           </Text>
           {error ? <Text style={{ color: colors.danger, fontSize: 13, marginLeft: 36 }}>{error}</Text> : null}
+        </View>
+        <View style={{ height: 1, backgroundColor: colors.border }} />
+        <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <Ionicons name="contrast-outline" size={24} color={colors.text} />
+            <Text style={{ flex: 1, color: colors.text, fontSize: 16 }}>Appearance</Text>
+          </View>
+          <View style={{ flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 999, padding: 4, marginLeft: 36 }}>
+            {(['system', 'light', 'dark'] as AppearancePref[]).map((m) => {
+              const on = appearance === m;
+              return (
+                <Pressable
+                  key={m}
+                  accessibilityRole="radio"
+                  accessibilityLabel={m === 'system' ? 'Match device' : m === 'light' ? 'Light' : 'Dark'}
+                  accessibilityState={{ selected: on }}
+                  onPress={() => setAppearance(m)}
+                  style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 999, backgroundColor: on ? colors.card : 'transparent' }}
+                >
+                  <Text style={{ color: on ? colors.text : colors.textMuted, fontWeight: on ? '700' : '600', fontSize: 14 }}>
+                    {m === 'system' ? 'Device' : m === 'light' ? 'Light' : 'Dark'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
         <View style={{ height: 1, backgroundColor: colors.border }} />
         <Row icon="heart-outline" label="Posts you've liked" onPress={() => router.push('/settings/liked')} />

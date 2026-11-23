@@ -34,6 +34,7 @@ export default function UserProfile() {
   const [person, setPerson] = useState<Person | null>(null);
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [hasStory, setHasStory] = useState(false);
   const [tagged, setTagged] = useState<FeedPost[]>([]);
   const [tab, setTab] = useState<ProfileTab>('posts');
   const [follow, setFollow] = useState<Follow>('none');
@@ -51,12 +52,14 @@ export default function UserProfile() {
     const p = data as unknown as Person | null;
     setPerson(p);
     if (p) {
-      const [s, f, ps, tg] = await Promise.all([
+      const [s, f, ps, tg, st] = await Promise.all([
         supabase.from('profile_stats').select('posts_count, followers_count, following_count').eq('user_id', p.id).maybeSingle(),
         supabase.from('follows').select('state').eq('follower_id', me.id).eq('followee_id', p.id).maybeSingle(),
         supabase.from('posts').select(feedSelect).eq('author_id', p.id).order('id', { ascending: false }).limit(60),
         supabase.from('post_tags').select(`created_at, posts(${feedSelect})`).eq('tagged_id', p.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(60),
+        supabase.from('stories').select('id', { count: 'exact', head: true }).eq('author_id', p.id).gt('expires_at', new Date().toISOString()),
       ]);
+      setHasStory((st.count ?? 0) > 0);
       setTagged(((tg.data ?? []) as unknown as { posts: FeedPost | null }[]).flatMap((r) => (r.posts ? [r.posts] : [])));
       if (s.data) setStats({ posts: s.data.posts_count, followers: s.data.followers_count, following: s.data.following_count });
       setFollow((f.data?.state as Follow | undefined) ?? 'none');
@@ -110,7 +113,12 @@ export default function UserProfile() {
       <View>
         <ProfileBanner storageKey={person.cover?.storage_key} />
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md, paddingHorizontal: spacing.sm, marginTop: -48 }}>
-          <RingAvatar username={person.username} storageKey={person.avatar?.storage_key} size={104} />
+          <RingAvatar
+            username={person.username}
+            storageKey={person.avatar?.storage_key}
+            size={104}
+            onPress={hasStory ? () => router.push({ pathname: '/story/[username]', params: { username: person.username } }) : undefined}
+          />
           <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around', paddingBottom: 4 }}>
             {counts.map(([label, value, onPress]) => (
               <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>

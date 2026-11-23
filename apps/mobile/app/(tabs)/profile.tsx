@@ -32,6 +32,7 @@ export default function Profile() {
   const [cover, setCover] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('posts');
   const [menu, setMenu] = useState(false);
+  const [hasStory, setHasStory] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,6 +63,12 @@ export default function Profile() {
             ((data ?? []) as unknown as { posts: FeedPost | null }[]).flatMap((r) => (r.posts ? [r.posts] : [])),
           ),
         );
+      supabase
+        .from('stories')
+        .select('id', { count: 'exact', head: true })
+        .eq('author_id', profile.id)
+        .gt('expires_at', new Date().toISOString())
+        .then(({ count }) => setHasStory((count ?? 0) > 0));
       supabase
         .from('post_tags')
         .select(`created_at, posts(${feedSelect})`)
@@ -120,7 +127,12 @@ export default function Profile() {
       <View>
         <ProfileBanner storageKey={cover} />
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md, paddingHorizontal: spacing.sm, marginTop: -48 }}>
-          <RingAvatar username={profile.username} storageKey={avatar} size={104} />
+          <RingAvatar
+            username={profile.username}
+            storageKey={avatar}
+            size={104}
+            onPress={hasStory ? () => router.push({ pathname: '/story/[username]', params: { username: profile.username } }) : undefined}
+          />
           <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around', paddingBottom: 4 }}>
             {counts.map(([label, value, onPress]) => (
               <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>

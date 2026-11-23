@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppHeader } from '../src/ui/AppHeader';
+import { useTheme } from '../src/theme';
 import { SessionProvider, useSession } from '../src/lib/session';
 
 type HeaderProps = { options: { title?: string }; back?: unknown; navigation: { goBack: () => void } };
@@ -51,11 +52,12 @@ function Routes() {
 }
 
 export default function RootLayout() {
+  const { scheme } = useTheme();
   return (
     <SafeAreaProvider>
       <SessionProvider>
         <Routes />
-        <StatusBar style="auto" />
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       </SessionProvider>
     </SafeAreaProvider>
   );

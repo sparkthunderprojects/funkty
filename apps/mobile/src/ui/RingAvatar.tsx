@@ -1,17 +1,17 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { mediaUrl } from '../lib/posts';
 import { useTheme } from '../theme';
 
 /** Profile photo as a rounded square inside a gradient ring. */
-export function RingAvatar({ username, storageKey, size = 96 }: { username: string; storageKey?: string | null; size?: number }) {
+export function RingAvatar({ username, storageKey, size = 96, onPress }: { username: string; storageKey?: string | null; size?: number; onPress?: () => void }) {
   const { colors } = useTheme();
   const ring = size >= 80 ? 4 : 2.5;
   const gap = size >= 80 ? 3 : 2;
   const inner = size - 2 * (ring + gap);
   const outerRadius = size * 0.3;
-  return (
+  const ringed = (
     <LinearGradient
       colors={['#7C3AED', '#F43F5E', '#FBBF24']}
       start={{ x: 0, y: 1 }}
@@ -36,6 +36,12 @@ export function RingAvatar({ username, storageKey, size = 96 }: { username: stri
         )}
       </View>
     </LinearGradient>
+  );
+  if (!onPress) return ringed;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`View ${username}'s story`} onPress={onPress}>
+      {ringed}
+    </Pressable>
   );
 }
 
