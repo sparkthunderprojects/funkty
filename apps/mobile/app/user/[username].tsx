@@ -157,7 +157,9 @@ export default function UserProfile() {
         </>
       )}
       {posts.length > 0 ? (
-        <PostGrid posts={posts} />
+        <View style={{ marginHorizontal: -spacing.lg }}>
+          <PostGrid posts={posts} />
+        </View>
       ) : (
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
           {person.is_private && follow !== 'active' && !isMe ? 'This account is private. Follow to see their posts.' : 'No posts yet.'}

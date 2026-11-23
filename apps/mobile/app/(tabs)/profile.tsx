@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -7,7 +7,9 @@ import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/ui/Avatar';
+import { ActionSheet } from '../../src/ui/ActionSheet';
 import { Button } from '../../src/ui/Button';
+import { shareLink } from '../../src/lib/share';
 import { PostGrid } from '../../src/ui/PostGrid';
 import { Screen } from '../../src/ui/Screen';
 
@@ -23,6 +25,7 @@ export default function Profile() {
   const [saved, setSaved] = useState<FeedPost[]>([]);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('posts');
+  const [menu, setMenu] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,8 +76,28 @@ export default function Profile() {
   ];
   return (
     <Screen scroll>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ color: colors.text, fontSize: 22, fontWeight: '700', flex: 1 }} numberOfLines={1}>
+          {profile.username}
+        </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Create" onPress={() => router.push('/create')} hitSlop={10} style={{ marginRight: spacing.md }}>
+          <Feather name="plus-square" size={26} color={colors.text} />
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Menu" onPress={() => setMenu(true)} hitSlop={10}>
+          <Ionicons name="menu" size={30} color={colors.text} />
+        </Pressable>
+      </View>
+      <ActionSheet
+        visible={menu}
+        onClose={() => setMenu(false)}
+        actions={[
+          { label: 'Edit profile', onPress: () => router.push('/edit-profile') },
+          { label: 'Share profile', onPress: () => void shareLink(`${profile.username} on Funkty`, `/user/${profile.username}`) },
+          { label: 'Log out', onPress: () => void signOut(), destructive: true },
+        ]}
+      />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-        <Avatar username={profile.username} storageKey={avatar} size={84} />
+        <Avatar username={profile.username} storageKey={avatar} size={88} />
         <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around' }}>
           {counts.map(([label, value, onPress]) => (
             <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>
@@ -88,7 +111,7 @@ export default function Profile() {
         <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSize.body }}>
           {profile.display_name || profile.username}
         </Text>
-        <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>@{profile.username}</Text>
+        
         {profile.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body }}>{profile.bio}</Text> : null}
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -96,7 +119,7 @@ export default function Profile() {
           <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} compact />
         </View>
         <View style={{ flex: 1 }}>
-          <Button label="Log out" variant="secondary" onPress={signOut} compact />
+          <Button label="Share profile" variant="secondary" onPress={() => void shareLink(`${profile.username} on Funkty`, `/user/${profile.username}`)} compact />
         </View>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', borderBottomWidth: 1, borderColor: colors.border }}>
@@ -118,7 +141,9 @@ export default function Profile() {
         ))}
       </View>
       {shown.length > 0 ? (
-        <PostGrid posts={shown} />
+        <View style={{ marginHorizontal: -spacing.lg }}>
+          <PostGrid posts={shown} />
+        </View>
       ) : (
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
           {tab === 'posts' ? 'No posts yet. Tap + to share your first photo.' : 'Posts you save appear here, only visible to you.'}

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -18,7 +18,7 @@ export default function Home() {
   const { colors, fontSize, spacing } = useTheme();
   const { profile } = useSession();
   const router = useRouter();
-  const [unreadDms, setUnreadDms] = useState(0);
+  const [unreadActivity, setUnreadActivity] = useState(0);
   const [mode, setMode] = useState<Mode>('everyone');
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [liked, setLiked] = useState<Set<string>>(new Set());
@@ -54,8 +54,12 @@ export default function Home() {
         setSaved(new Set((saves.data ?? []).map((l) => l.post_id)));
       }
     }
-    const inbox = await supabase.rpc('inbox');
-    setUnreadDms((inbox.data ?? []).reduce((n, c) => n + Number(c.unread), 0));
+    const unread = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', profile.id)
+      .is('read_at', null);
+    setUnreadActivity(unread.count ?? 0);
     setLoading(false);
   }, [mode, profile]);
 
@@ -69,31 +73,19 @@ export default function Home() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Pressable accessibilityRole="link" accessibilityLabel="Create" onPress={() => router.push('/create')} hitSlop={10}>
+            <Feather name="plus" size={30} color={colors.text} />
+          </Pressable>
           <Logo height={34} />
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel={unreadDms > 0 ? `Messages, ${unreadDms} unread` : 'Messages'}
-            onPress={() => router.push('/messages')}
+            accessibilityLabel={unreadActivity > 0 ? `Activity, ${unreadActivity} unread` : 'Activity'}
+            onPress={() => router.push('/activity')}
             hitSlop={10}
           >
-            <Ionicons name="paper-plane-outline" size={26} color={colors.text} />
-            {unreadDms > 0 ? (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -6,
-                  minWidth: 18,
-                  height: 18,
-                  borderRadius: 9,
-                  backgroundColor: colors.danger,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingHorizontal: 4,
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>{unreadDms}</Text>
-              </View>
+            <Ionicons name="heart-outline" size={28} color={colors.text} />
+            {unreadActivity > 0 ? (
+              <View style={{ position: 'absolute', top: 0, right: 0, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
             ) : null}
           </Pressable>
         </View>

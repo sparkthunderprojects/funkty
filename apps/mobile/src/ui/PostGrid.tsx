@@ -8,7 +8,7 @@ import { useTheme } from '../theme';
 export function PostGrid({ posts }: { posts: FeedPost[] }) {
   const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 2 }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
       {posts.map((post) => {
         const image = firstImage(post);
         return (

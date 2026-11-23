@@ -3,11 +3,17 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { type FeedPost, postImages, timeAgo } from '../lib/posts';
+import { shareLink } from '../lib/share';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 import { Avatar } from './Avatar';
 import { Carousel } from './Carousel';
 import { RichText } from './RichText';
+
+/** 1200 -> 1.2K, so counts stay short next to the icons. */
+function compact(n: number): string {
+  return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.0', '')}M` : n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : String(n);
+}
 
 type Props = { post: FeedPost; liked: boolean; saved: boolean };
 
@@ -19,6 +25,9 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
   const images = postImages(post);
   const username = post.profiles?.username ?? 'unknown';
   const comments = post.post_stats?.comment_count ?? 0;
+
+  const countStyle = { flexDirection: 'row', alignItems: 'center', gap: 6 } as const;
+  const countText = { color: colors.text, fontSize: 14, fontWeight: '600' } as const;
 
   async function toggleLike() {
     const next = !liked;
@@ -69,14 +78,25 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           accessibilityState={{ selected: liked }}
           onPress={toggleLike}
           hitSlop={8}
+          style={countStyle}
         >
-          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={28} color={liked ? colors.danger : colors.text} />
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={27} color={liked ? colors.danger : colors.text} />
+          <Text style={countText}>{compact(likes)}</Text>
         </Pressable>
         <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
-          <Pressable accessibilityRole="link" accessibilityLabel="Comments" hitSlop={8}>
-            <Ionicons name="chatbubble-outline" size={25} color={colors.text} />
+          <Pressable accessibilityRole="link" accessibilityLabel="Comments" hitSlop={8} style={countStyle}>
+            <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
+            <Text style={countText}>{compact(comments)}</Text>
           </Pressable>
         </Link>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Share"
+          onPress={() => void shareLink(`${username} on Funkty`, `/post/${post.id}`)}
+          hitSlop={8}
+        >
+          <Ionicons name="paper-plane-outline" size={24} color={colors.text} />
+        </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable
           accessibilityRole="button"
@@ -89,9 +109,6 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
         </Pressable>
       </View>
       <View style={{ paddingHorizontal: spacing.md, gap: 2 }}>
-        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>
-          {likes} {likes === 1 ? 'like' : 'likes'}
-        </Text>
         {post.caption ? (
           <RichText lead={username} text={post.caption} style={{ color: colors.text, fontSize: fontSize.body }} />
         ) : null}

@@ -92,7 +92,7 @@ export function StoriesTray() {
   }
 
   if (!profile) return null;
-  const size = 64;
+  const size = 76;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.md, paddingVertical: spacing.sm }}>
       <Pressable
