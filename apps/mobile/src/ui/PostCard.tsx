@@ -39,16 +39,20 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
   }
 
   return (
-    <View style={{ gap: spacing.sm }}>
-      <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
-        <Pressable
-          accessibilityRole="link"
-          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md }}
-        >
-          <Avatar username={username} storageKey={post.profiles?.avatar?.storage_key} />
-          <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSize.body }}>{username}</Text>
-        </Pressable>
-      </Link>
+    <View style={{ gap: spacing.sm, paddingBottom: spacing.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
+        <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
+          <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+            <Avatar username={username} storageKey={post.profiles?.avatar?.storage_key} size={32} />
+            <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>{username}</Text>
+          </Pressable>
+        </Link>
+        <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
+          <Pressable accessibilityRole="button" accessibilityLabel="More options" hitSlop={12}>
+            <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
+          </Pressable>
+        </Link>
+      </View>
       {images.length > 0 ? (
         <Carousel
           images={images}
@@ -85,7 +89,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
         </Pressable>
       </View>
       <View style={{ paddingHorizontal: spacing.md, gap: 2 }}>
-        <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSize.body }}>
+        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>
           {likes} {likes === 1 ? 'like' : 'likes'}
         </Text>
         {post.caption ? (
@@ -98,7 +102,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
             </Text>
           </Link>
         ) : null}
-        <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>{timeAgo(post.created_at)} ago</Text>
+        <Text style={{ color: colors.textMuted, fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase' }}>{timeAgo(post.created_at)} ago</Text>
       </View>
     </View>
   );

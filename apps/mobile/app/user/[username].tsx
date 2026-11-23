@@ -113,7 +113,7 @@ export default function UserProfile() {
         {person.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body }}>{person.bio}</Text> : null}
       </View>
       {isMe ? (
-        <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} />
+        <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} compact />
       ) : (
         <>
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -123,12 +123,14 @@ export default function UserProfile() {
                 variant={follow === 'none' ? 'primary' : 'secondary'}
                 onPress={toggleFollow}
                 loading={busy}
+                compact
               />
             </View>
             <View style={{ flex: 1 }}>
               <Button
                 label="Message"
                 variant="secondary"
+                compact
                 onPress={() => router.push({ pathname: '/messages/[username]', params: { username: person.username } })}
               />
             </View>
@@ -143,7 +145,7 @@ export default function UserProfile() {
                   <Button label="Block" onPress={block} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Button label="Cancel" variant="secondary" onPress={() => setConfirmBlock(false)} />
+                  <Button label="Cancel" variant="secondary" onPress={() => setConfirmBlock(false)} compact />
                 </View>
               </View>
             </View>

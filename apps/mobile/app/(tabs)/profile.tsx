@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -92,10 +93,10 @@ export default function Profile() {
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         <View style={{ flex: 1 }}>
-          <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} />
+          <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} compact />
         </View>
         <View style={{ flex: 1 }}>
-          <Button label="Log out" variant="secondary" onPress={signOut} />
+          <Button label="Log out" variant="secondary" onPress={signOut} compact />
         </View>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', borderBottomWidth: 1, borderColor: colors.border }}>
@@ -107,7 +108,12 @@ export default function Profile() {
             onPress={() => setTab(t)}
             style={{ paddingVertical: spacing.sm, borderBottomWidth: 2, borderColor: tab === t ? colors.text : 'transparent', flex: 1, alignItems: 'center' }}
           >
-            <Text style={{ color: tab === t ? colors.text : colors.textMuted, fontWeight: '700' }}>{t === 'posts' ? 'Posts' : 'Saved'}</Text>
+            <Ionicons
+              accessibilityLabel={t === 'posts' ? 'Posts' : 'Saved'}
+              name={t === 'posts' ? (tab === t ? 'grid' : 'grid-outline') : tab === t ? 'bookmark' : 'bookmark-outline'}
+              size={24}
+              color={tab === t ? colors.text : colors.textMuted}
+            />
           </Pressable>
         ))}
       </View>

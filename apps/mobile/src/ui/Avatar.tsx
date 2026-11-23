@@ -24,12 +24,12 @@ export function Avatar({ username, storageKey, size = 34 }: Props) {
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.border,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: colors.onPrimary, fontWeight: '800', fontSize: size * 0.42 }}>
+      <Text style={{ color: colors.textMuted, fontWeight: '700', fontSize: size * 0.42 }}>
         {username.slice(0, 1).toUpperCase()}
       </Text>
     </View>
