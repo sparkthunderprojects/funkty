@@ -16,9 +16,13 @@ Run typecheck and tests before every push.
 
 `docs/dev-build-backlog.md` lists what cannot be built or tested in Expo Go and is waiting for an EAS development build. Whenever you defer something for that reason (or any other reason in that file), add it there in the same commit, and tick off or remove items you complete.
 
-## Feature list
+## Keep both documents current (owner requirement)
 
-`docs/features.md` lists everything built, for the owner to keep track. Whenever you add, change or remove a feature, update it in the same commit.
+After every piece of work, before pushing, update both documents in the same commit:
+- `docs/features.md`: what has been added, changed or removed.
+- `docs/dev-build-backlog.md`: what is still to be added, including ideas and anything deferred. Tick off or remove what was just built.
+
+If a change touches neither, say so in the commit message. Never push feature work with these out of date.
 
 ## Layout
 
