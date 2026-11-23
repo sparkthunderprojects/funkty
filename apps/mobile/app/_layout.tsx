@@ -1,7 +1,17 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppHeader } from '../src/ui/AppHeader';
 import { SessionProvider, useSession } from '../src/lib/session';
+
+type HeaderProps = { options: { title?: string }; back?: unknown; navigation: { goBack: () => void } };
+const pushed = (title: string) => ({
+  headerShown: true,
+  title,
+  header: ({ options, back, navigation }: HeaderProps) => (
+    <AppHeader title={options.title} onBack={back ? () => navigation.goBack() : undefined} />
+  ),
+});
 
 function Routes() {
   const { loading, session, profile } = useSession();
@@ -16,18 +26,18 @@ function Routes() {
       </Stack.Protected>
       <Stack.Protected guard={!!session && !!profile}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="post/[id]" options={{ headerShown: true, title: 'Post' }} />
-        <Stack.Screen name="user/[username]" options={{ headerShown: true, title: 'Profile' }} />
+        <Stack.Screen name="post/[id]" options={pushed('Post')} />
+        <Stack.Screen name="user/[username]" options={pushed('Profile')} />
         <Stack.Screen name="story/[username]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-        <Stack.Screen name="messages/index" options={{ headerShown: true, title: 'Messages' }} />
-        <Stack.Screen name="messages/[username]" options={{ headerShown: true, title: 'Message' }} />
-        <Stack.Screen name="settings/index" options={{ headerShown: true, title: 'Settings' }} />
-        <Stack.Screen name="settings/blocked" options={{ headerShown: true, title: 'Blocked accounts' }} />
-        <Stack.Screen name="settings/muted" options={{ headerShown: true, title: 'Muted accounts' }} />
-        <Stack.Screen name="settings/liked" options={{ headerShown: true, title: 'Posts you\'ve liked' }} />
-        <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
-        <Stack.Screen name="tag/[tag]" options={{ headerShown: true, title: 'Hashtag' }} />
-        <Stack.Screen name="connections/[username]" options={{ headerShown: true, title: 'People' }} />
+        <Stack.Screen name="messages/index" options={pushed('Messages')} />
+        <Stack.Screen name="messages/[username]" options={pushed('Message')} />
+        <Stack.Screen name="settings/index" options={pushed('Settings')} />
+        <Stack.Screen name="settings/blocked" options={pushed('Blocked accounts')} />
+        <Stack.Screen name="settings/muted" options={pushed('Muted accounts')} />
+        <Stack.Screen name="settings/liked" options={pushed('Posts you\'ve liked')} />
+        <Stack.Screen name="edit-profile" options={pushed('Edit profile')} />
+        <Stack.Screen name="tag/[tag]" options={pushed('Hashtag')} />
+        <Stack.Screen name="connections/[username]" options={pushed('People')} />
       </Stack.Protected>
     </Stack>
   );
