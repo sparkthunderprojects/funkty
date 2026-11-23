@@ -10,6 +10,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
 import { Logo } from '../../src/ui/Logo';
 import { PostCard } from '../../src/ui/PostCard';
+import { SuggestedPeople } from '../../src/ui/SuggestedPeople';
 import { StoriesTray } from '../../src/ui/StoriesTray';
 
 type Mode = 'everyone' | 'following';
@@ -136,7 +137,12 @@ export default function Home() {
       </View>
       <FlatList
         data={posts}
-        ListHeaderComponent={<StoriesTray />}
+        ListHeaderComponent={
+          <>
+            <StoriesTray />
+            <SuggestedPeople />
+          </>
+        }
         keyExtractor={(post) => post.id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
