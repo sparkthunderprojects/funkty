@@ -10,7 +10,7 @@ Funkty is a social platform: Next.js web, Expo native (iOS/Android), Supabase ba
 - Build web: `pnpm --filter @funkty/web build`
 - Bundle check for native: `cd apps/mobile && CI=1 npx expo export --platform android --output-dir /tmp/expo-out`
 
-Run typecheck and tests before every pull request.
+Run typecheck and tests before every push.
 
 ## Layout
 
@@ -30,7 +30,7 @@ Run typecheck and tests before every pull request.
 - Every restriction on content or accounts must cite a policy and a user-facing reason (see ADR 0001).
 - Expo changes between SDK releases: before writing Expo or React Native API code, read the docs for the installed `expo` major version at https://docs.expo.dev/versions/ and use `npx expo install` for Expo-related packages.
 - Features ship as complete vertical slices: schema, policies, API, web, native, tests, wiring. Nothing is left for manual integration.
-- Work lands as small pull requests from branches. Never push to `main`.
+- Work may be pushed directly to `main` (owner decision, 2026-11-23), but only after `pnpm typecheck`, `pnpm test` and the web build pass.
 
 ## Brand
 
