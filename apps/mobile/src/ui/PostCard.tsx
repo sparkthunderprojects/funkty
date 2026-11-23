@@ -113,7 +113,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
         onDeleted={() => (onDeleted ? onDeleted() : setRemoved(true))}
         onMuted={() => (onDeleted ? onDeleted() : setRemoved(true))}
       />
-      <View>
+      <View style={{ marginHorizontal: 12, borderRadius: 24, overflow: 'hidden' }}>
       {video ? (
         playing ? (
           <View>

@@ -6,7 +6,8 @@ import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
-import { Avatar } from '../../src/ui/Avatar';
+import { ProfileBanner, RingAvatar } from '../../src/ui/RingAvatar';
+import { Wordmark } from '../../src/ui/Logo';
 import { ActionSheet } from '../../src/ui/ActionSheet';
 import { Button } from '../../src/ui/Button';
 import { shareLink } from '../../src/lib/share';
@@ -76,11 +77,11 @@ export default function Profile() {
     ['Following', stats?.following, () => router.push({ pathname: '/connections/[username]', params: { username: profile.username, type: 'following' } })],
   ];
   return (
-    <Screen scroll>
+    <Screen scroll tabs>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ color: colors.text, fontSize: 22, fontWeight: '700', flex: 1 }} numberOfLines={1}>
-          {profile.username}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Wordmark height={30} />
+        </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Create" onPress={() => router.push('/create')} hitSlop={10} style={{ marginRight: spacing.md }}>
           <Feather name="plus-square" size={26} color={colors.text} />
         </Pressable>
@@ -98,23 +99,24 @@ export default function Profile() {
           { label: 'Log out', onPress: () => void signOut(), destructive: true },
         ]}
       />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-        <Avatar username={profile.username} storageKey={avatar} size={88} />
-        <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around' }}>
-          {counts.map(([label, value, onPress]) => (
-            <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>
-              <Text style={{ color: colors.text, fontSize: fontSize.title, fontWeight: '800' }}>{value ?? 0}</Text>
-              <Text style={{ color: colors.text, fontSize: fontSize.caption }}>{label}</Text>
-            </Pressable>
-          ))}
+      <View>
+        <ProfileBanner />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md, paddingHorizontal: spacing.sm, marginTop: -48 }}>
+          <RingAvatar username={profile.username} storageKey={avatar} size={104} />
+          <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around', paddingBottom: 4 }}>
+            {counts.map(([label, value, onPress]) => (
+              <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>
+                <Text style={{ color: colors.text, fontSize: fontSize.title, fontWeight: '800' }}>{value ?? 0}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </View>
-      <View>
-        <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSize.body }}>
-          {profile.display_name || profile.username}
-        </Text>
-        
-        {profile.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body }}>{profile.bio}</Text> : null}
+      <View style={{ paddingHorizontal: spacing.sm }}>
+        <Text style={{ color: colors.text, fontWeight: '800', fontSize: 22 }}>{profile.display_name || profile.username}</Text>
+        <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>@{profile.username}</Text>
+        {profile.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body, marginTop: 4 }}>{profile.bio}</Text> : null}
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         <View style={{ flex: 1 }}>

@@ -27,7 +27,7 @@ export function Button({ label, onPress, variant = 'primary', loading, disabled,
         styles.base,
         {
           backgroundColor: background,
-          borderRadius: radius.sm,
+          borderRadius: radius.pill,
           paddingVertical: compact ? spacing.sm : spacing.md,
           minHeight: compact ? 34 : 46,
           opacity: inactive ? 0.5 : pressed ? 0.85 : 1,

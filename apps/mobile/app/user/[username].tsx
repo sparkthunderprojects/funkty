@@ -5,7 +5,7 @@ import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
-import { Avatar } from '../../src/ui/Avatar';
+import { ProfileBanner, RingAvatar } from '../../src/ui/RingAvatar';
 import { Button } from '../../src/ui/Button';
 import { PostGrid } from '../../src/ui/PostGrid';
 import { type ProfileTab, ProfileTabs } from '../../src/ui/ProfileTabs';
@@ -99,21 +99,24 @@ export default function UserProfile() {
   ];
   return (
     <Screen scroll>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-        <Avatar username={person.username} storageKey={person.avatar?.storage_key} size={84} />
-        <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around' }}>
-          {counts.map(([label, value, onPress]) => (
-            <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>
-              <Text style={{ color: colors.text, fontSize: fontSize.title, fontWeight: '800' }}>{value}</Text>
-              <Text style={{ color: colors.text, fontSize: fontSize.caption }}>{label}</Text>
-            </Pressable>
-          ))}
+      <View>
+        <ProfileBanner />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md, paddingHorizontal: spacing.sm, marginTop: -48 }}>
+          <RingAvatar username={person.username} storageKey={person.avatar?.storage_key} size={104} />
+          <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'space-around', paddingBottom: 4 }}>
+            {counts.map(([label, value, onPress]) => (
+              <Pressable key={label} accessibilityRole={onPress ? 'link' : 'text'} onPress={onPress} style={{ alignItems: 'center' }}>
+                <Text style={{ color: colors.text, fontSize: fontSize.title, fontWeight: '800' }}>{value}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </View>
-      <View>
-        <Text style={{ color: colors.text, fontWeight: '700', fontSize: fontSize.body }}>{person.display_name || person.username}</Text>
+      <View style={{ paddingHorizontal: spacing.sm }}>
+        <Text style={{ color: colors.text, fontWeight: '800', fontSize: 22 }}>{person.display_name || person.username}</Text>
         <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>@{person.username}</Text>
-        {person.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body }}>{person.bio}</Text> : null}
+        {person.bio ? <Text style={{ color: colors.text, fontSize: fontSize.body, marginTop: 4 }}>{person.bio}</Text> : null}
       </View>
       {isMe ? (
         <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} compact />

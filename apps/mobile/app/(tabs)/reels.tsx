@@ -8,6 +8,7 @@ import { useSession } from '../../src/lib/session';
 import { shareLink } from '../../src/lib/share';
 import { loadMuted } from '../../src/lib/mutes';
 import { supabase } from '../../src/lib/supabase';
+import { useTabBarSpace } from '../../src/ui/layout';
 import { useTheme } from '../../src/theme';
 import { SpoilerVeil } from '../../src/ui/SpoilerVeil';
 import { Glass } from '../../src/ui/Glass';
@@ -26,6 +27,7 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
   saved: boolean;
 }) {
   const { colors } = useTheme();
+  const lift = useTabBarSpace() - 16;
   const router = useRouter();
   const video = postVideo(post);
   const [liked, setLiked] = useState(initialLiked);
@@ -73,7 +75,7 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
         <Image source={{ uri: video.poster }} contentFit="cover" style={{ width: '100%', height }} />
       ) : null}
       {veiled ? <SpoilerVeil onReveal={() => setRevealed(true)} /> : null}
-      <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom: 28 }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom: 28 + lift }}>
         <Glass radius={30} padding={10} intensity={35} style={{ width: 58 }}>
         <View style={{ gap: 20, alignItems: 'center' }}>
         <Pressable accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'} onPress={toggleLike} style={rail}>
@@ -93,7 +95,7 @@ function Reel({ post, height, active, near, muted, onToggleMute, liked: initialL
         </View>
         </Glass>
       </View>
-      <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 80, bottom: 28, gap: 8 }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 80, bottom: 28 + lift, gap: 8 }}>
         <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
           <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Avatar username={username} storageKey={post.profiles?.avatar?.storage_key} size={34} />

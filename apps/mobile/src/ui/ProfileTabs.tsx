@@ -1,32 +1,36 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 
 export type ProfileTab = 'posts' | 'reels' | 'saved';
-const icons: Record<ProfileTab, [keyof typeof Ionicons.glyphMap, keyof typeof Ionicons.glyphMap, string]> = {
-  posts: ['grid', 'grid-outline', 'Posts'],
-  reels: ['film', 'film-outline', 'Reels'],
-  saved: ['bookmark', 'bookmark-outline', 'Saved'],
-};
+const labels: Record<ProfileTab, string> = { posts: 'Posts', reels: 'Reels', saved: 'Saved' };
 
-/** Icon tab row under the profile header: Posts, Reels and (on your own profile) Saved. */
+/** Pill-shaped switch under the profile header: Posts, Reels and (on your own profile) Saved. */
 export function ProfileTabs({ tabs, value, onChange }: { tabs: ProfileTab[]; value: ProfileTab; onChange: (t: ProfileTab) => void }) {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border }}>
+    <View style={{ flexDirection: 'row', alignSelf: 'center', backgroundColor: colors.surface, borderRadius: 999, padding: 4 }}>
       {tabs.map((t) => {
-        const [filled, outline, label] = icons[t];
         const on = value === t;
         return (
           <Pressable
             key={t}
             accessibilityRole="tab"
-            accessibilityLabel={label}
+            accessibilityLabel={labels[t]}
             accessibilityState={{ selected: on }}
             onPress={() => onChange(t)}
-            style={{ flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 2, borderColor: on ? colors.text : 'transparent', marginBottom: -1 }}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 22,
+              borderRadius: 999,
+              backgroundColor: on ? colors.card : 'transparent',
+              shadowColor: '#000',
+              shadowOpacity: on ? 0.08 : 0,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: on ? 2 : 0,
+            }}
           >
-            <Ionicons name={on ? filled : outline} size={24} color={on ? colors.text : colors.textMuted} />
+            <Text style={{ color: on ? colors.text : colors.textMuted, fontSize: 14, fontWeight: on ? '700' : '600' }}>{labels[t]}</Text>
           </Pressable>
         );
       })}

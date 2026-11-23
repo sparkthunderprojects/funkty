@@ -7,6 +7,7 @@ import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { addRecent, clearRecent, loadRecent, removeRecent } from '../../src/lib/recent';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
+import { useTabBarSpace } from '../../src/ui/layout';
 import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/ui/Avatar';
 import { PostGrid } from '../../src/ui/PostGrid';
@@ -19,6 +20,7 @@ const clean = (s: string) => s.trim().toLowerCase().replace(/[^\p{L}\p{N}._]/gu,
 
 export default function Search() {
   const { colors, fontSize, spacing } = useTheme();
+  const tabSpace = useTabBarSpace();
   const router = useRouter();
   const { profile } = useSession();
   const [recent, setRecent] = useState<string[]>([]);
@@ -161,7 +163,7 @@ export default function Search() {
             ))}
           </View>
           {tab === 'top' ? (
-            <ScrollView keyboardShouldPersistTaps="handled">
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: tabSpace }}>
               {posts.length > 0 ? <PostGrid posts={posts} /> : searched ? <Text style={muted}>No posts found.</Text> : null}
             </ScrollView>
           ) : tab === 'accounts' ? (
@@ -169,6 +171,7 @@ export default function Search() {
               data={accounts}
               keyExtractor={(a) => a.id}
               keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: tabSpace }}
               ListEmptyComponent={searched ? <Text style={muted}>No accounts found.</Text> : undefined}
               renderItem={({ item }) => (
                 <Link href={{ pathname: '/user/[username]', params: { username: item.username } }} asChild>
@@ -187,6 +190,7 @@ export default function Search() {
               data={tags}
               keyExtractor={([t]) => t}
               keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: tabSpace }}
               ListEmptyComponent={searched ? <Text style={muted}>No tags found.</Text> : undefined}
               renderItem={({ item: [tag, count] }) => (
                 <Pressable
@@ -210,7 +214,7 @@ export default function Search() {
           )}
         </>
       ) : (
-        <ScrollView keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: tabSpace }}>
           {recent.length > 0 ? (
             <View style={{ paddingBottom: spacing.sm }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>

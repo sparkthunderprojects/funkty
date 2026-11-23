@@ -5,6 +5,7 @@ import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { mediaUrl, timeAgo } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
+import { useTabBarSpace } from '../../src/ui/layout';
 import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/ui/Avatar';
 import { Button } from '../../src/ui/Button';
@@ -33,6 +34,7 @@ const verbs: Record<Notice['type'], string> = {
 
 export default function Activity() {
   const { colors, fontSize, spacing, radius } = useTheme();
+  const tabSpace = useTabBarSpace();
   const { profile } = useSession();
   const [items, setItems] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,7 @@ export default function Activity() {
       <FlatList
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
         data={items}
+        contentContainerStyle={{ paddingBottom: tabSpace }}
         keyExtractor={(n) => n.id}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         ListEmptyComponent={

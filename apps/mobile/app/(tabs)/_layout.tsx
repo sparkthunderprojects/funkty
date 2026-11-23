@@ -5,11 +5,13 @@ import { supabase } from '../../src/lib/supabase';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { Avatar } from '../../src/ui/Avatar';
+import { tabBarHeight, useTabBarOffset } from '../../src/ui/layout';
 import { useTheme } from '../../src/theme';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
   const { profile } = useSession();
+  const offset = useTabBarOffset();
   const [avatar, setAvatar] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,7 +31,27 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: false,
-        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
+        // A floating pill: it sits above the content, so screens add bottom padding with useTabBarSpace().
+        tabBarStyle: {
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: offset,
+          height: tabBarHeight,
+          borderRadius: tabBarHeight / 2,
+          backgroundColor: colors.card,
+          borderTopWidth: 0,
+          paddingBottom: 0,
+          paddingTop: 0,
+          shadowColor: '#000',
+          shadowOpacity: 0.12,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 10,
+        },
+        tabBarItemStyle: { height: tabBarHeight, alignItems: 'center', justifyContent: 'center' },
+        // Without a label the icon would hug the top of its item, so give it the full height and centre it.
+        tabBarIconStyle: { height: tabBarHeight, width: 48, alignItems: 'center', justifyContent: 'center' },
       }}
     >
       <Tabs.Screen
@@ -68,7 +90,7 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ focused }) => (
-            <View style={{ borderWidth: focused ? 2 : 0, borderColor: colors.text, borderRadius: 16, padding: focused ? 1 : 0 }}>
+            <View style={{ borderWidth: focused ? 2 : 0, borderColor: colors.primary, borderRadius: 16, padding: focused ? 1 : 0 }}>
               <Avatar username={profile?.username ?? '?'} storageKey={avatar} size={focused ? 24 : 26} />
             </View>
           ),

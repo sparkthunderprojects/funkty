@@ -7,8 +7,9 @@ import { useSession } from '../../src/lib/session';
 import { type FeedPost, feedSelect } from '../../src/lib/posts';
 import { loadMuted } from '../../src/lib/mutes';
 import { supabase } from '../../src/lib/supabase';
+import { useTabBarSpace } from '../../src/ui/layout';
 import { useTheme } from '../../src/theme';
-import { Logo } from '../../src/ui/Logo';
+import { Wordmark } from '../../src/ui/Logo';
 import { PostCard } from '../../src/ui/PostCard';
 import { SuggestedPeople } from '../../src/ui/SuggestedPeople';
 import { StoriesTray } from '../../src/ui/StoriesTray';
@@ -18,6 +19,7 @@ type Mode = 'everyone' | 'following';
 /** Keyset-ordered reverse-chronological feed. Ranking arrives with the feed service (later phase). */
 export default function Home() {
   const { colors, fontSize, spacing } = useTheme();
+  const tabSpace = useTabBarSpace();
   const { profile } = useSession();
   const router = useRouter();
   const [unreadActivity, setUnreadActivity] = useState(0);
@@ -79,11 +81,11 @@ export default function Home() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Pressable accessibilityRole="link" accessibilityLabel="Create" onPress={() => router.push('/create')} hitSlop={10}>
-            <Feather name="plus" size={30} color={colors.text} />
-          </Pressable>
-          <Logo height={34} />
+          <Wordmark height={30} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Pressable accessibilityRole="link" accessibilityLabel="Create" onPress={() => router.push('/create')} hitSlop={10}>
+            <Feather name="plus" size={28} color={colors.text} />
+          </Pressable>
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={unreadActivity > 0 ? `Activity, ${unreadActivity} unread` : 'Activity'}
@@ -146,7 +148,7 @@ export default function Home() {
         keyExtractor={(post) => post.id}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
-        contentContainerStyle={{ paddingVertical: spacing.md, flexGrow: 1 }}
+        contentContainerStyle={{ paddingTop: spacing.md, paddingBottom: tabSpace, flexGrow: 1 }}
         ListEmptyComponent={
           loading ? undefined : (
             <Text style={{ color: colors.textMuted, fontSize: fontSize.body, margin: spacing.lg }}>
