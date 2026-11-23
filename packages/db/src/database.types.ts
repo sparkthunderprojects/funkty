@@ -766,11 +766,32 @@ export type Database = {
           },
         ]
       }
+      highlights: {
+        Row: { id: string; owner_id: string; title: string; cover_media_id: string | null; created_at: string }
+        Insert: { id?: string; owner_id: string; title: string; cover_media_id?: string | null; created_at?: string }
+        Update: { id?: string; owner_id?: string; title?: string; cover_media_id?: string | null; created_at?: string }
+        Relationships: []
+      }
+      highlight_items: {
+        Row: { highlight_id: string; media_id: string; story_id: string | null; added_at: string }
+        Insert: { highlight_id: string; media_id: string; story_id?: string | null; added_at?: string }
+        Update: { highlight_id?: string; media_id?: string; story_id?: string | null; added_at?: string }
+        Relationships: []
+      }
+      post_tags: {
+        Row: { post_id: string; tagged_id: string; status: string; created_at: string }
+        Insert: { post_id: string; tagged_id: string; status?: string; created_at?: string }
+        Update: { post_id?: string; tagged_id?: string; status?: string; created_at?: string }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: string
           avatar_media_id: string | null
           bio: string | null
+          cover_media_id: string | null
+          location: string | null
+          website: string | null
           created_at: string
           display_name: string | null
           fanout_mode: string
@@ -784,6 +805,9 @@ export type Database = {
           account_status?: string
           avatar_media_id?: string | null
           bio?: string | null
+          cover_media_id?: string | null
+          location?: string | null
+          website?: string | null
           created_at?: string
           display_name?: string | null
           fanout_mode?: string
@@ -797,6 +821,9 @@ export type Database = {
           account_status?: string
           avatar_media_id?: string | null
           bio?: string | null
+          cover_media_id?: string | null
+          location?: string | null
+          website?: string | null
           created_at?: string
           display_name?: string | null
           fanout_mode?: string
@@ -1144,6 +1171,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_highlight: { Args: { p_title: string; p_story_id: string }; Returns: Database['public']['Tables']['highlights']['Row'] }
+      add_story_to_highlight: { Args: { p_highlight_id: string; p_story_id: string }; Returns: undefined }
+      remove_highlight_item: { Args: { p_highlight_id: string; p_media_id: string }; Returns: undefined }
+      rename_highlight: { Args: { p_highlight_id: string; p_title: string }; Returns: undefined }
+      delete_highlight: { Args: { p_highlight_id: string }; Returns: undefined }
+      tag_user: { Args: { p_post_id: string; p_user: string }; Returns: undefined }
+      untag_user: { Args: { p_post_id: string; p_user: string }; Returns: undefined }
+      respond_tag: { Args: { p_post_id: string; p_accept: boolean }; Returns: undefined }
       accept_follow_request: {
         Args: { p_follower: string }
         Returns: undefined
@@ -1183,6 +1218,9 @@ export type Database = {
           account_status: string
           avatar_media_id: string | null
           bio: string | null
+          cover_media_id: string | null
+          location: string | null
+          website: string | null
           created_at: string
           display_name: string | null
           fanout_mode: string

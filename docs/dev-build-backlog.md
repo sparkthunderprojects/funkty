@@ -53,4 +53,4 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 ## Blocked on a decision
 
 - **Links in captions and a followers export:** held back until the safety work exists (link scanning, abuse limits).
-- **Tagging people in posts:** needs consent and anti-harassment rules first. Credits are plain text for this reason.
+- **Profile website scanning:** profile websites are https-only and open behind a leaving-Funkty confirm, but destinations are not scanned. Add link scanning with the content-scanning work.

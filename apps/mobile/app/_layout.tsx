@@ -29,6 +29,7 @@ function Routes() {
         <Stack.Screen name="post/[id]" options={pushed('Post')} />
         <Stack.Screen name="user/[username]" options={pushed('Profile')} />
         <Stack.Screen name="story/[username]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+        <Stack.Screen name="highlight/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="messages/index" options={pushed('Messages')} />
         <Stack.Screen name="messages/[username]" options={pushed('Message')} />
         <Stack.Screen name="settings/index" options={pushed('Settings')} />

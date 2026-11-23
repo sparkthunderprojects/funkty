@@ -39,8 +39,18 @@ export function RingAvatar({ username, storageKey, size = 96 }: { username: stri
   );
 }
 
-/** A soft gradient banner behind the profile header. */
-export function ProfileBanner({ height = 120 }: { height?: number }) {
+/** Cover photo behind the profile header; a soft gradient stands in until one is chosen. */
+export function ProfileBanner({ height = 120, storageKey }: { height?: number; storageKey?: string | null }) {
+  if (storageKey) {
+    return (
+      <Image
+        source={{ uri: mediaUrl(storageKey) }}
+        accessibilityLabel="Cover photo"
+        style={{ height, borderRadius: 28 }}
+        contentFit="cover"
+      />
+    );
+  }
   return (
     <LinearGradient
       colors={['#C7B5FF', '#FFC4CF', '#FFE2A8']}

@@ -1,8 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 
-export type ProfileTab = 'posts' | 'reels' | 'saved';
-const labels: Record<ProfileTab, string> = { posts: 'Posts', reels: 'Reels', saved: 'Saved' };
+export type ProfileTab = 'posts' | 'reels' | 'tagged' | 'saved';
+const labels: Record<ProfileTab, string> = { posts: 'Posts', reels: 'Reels', tagged: 'Tagged', saved: 'Saved' };
 
 /** Pill-shaped switch under the profile header: Posts, Reels and (on your own profile) Saved. */
 export function ProfileTabs({ tabs, value, onChange }: { tabs: ProfileTab[]; value: ProfileTab; onChange: (t: ProfileTab) => void }) {
@@ -20,7 +20,7 @@ export function ProfileTabs({ tabs, value, onChange }: { tabs: ProfileTab[]; val
             onPress={() => onChange(t)}
             style={{
               paddingVertical: 8,
-              paddingHorizontal: 22,
+              paddingHorizontal: 16,
               borderRadius: 999,
               backgroundColor: on ? colors.card : 'transparent',
               shadowColor: '#000',

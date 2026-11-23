@@ -8,6 +8,7 @@ import { mediaUrl, timeAgo } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { Avatar } from '../../src/ui/Avatar';
+import { HighlightSheet } from '../../src/ui/HighlightSheet';
 import { StoryViewers } from '../../src/ui/StoryViewers';
 
 type Story = { id: string; created_at: string; media_assets: { storage_key: string } | null };
@@ -26,6 +27,7 @@ export default function StoryViewer() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [showViewers, setShowViewers] = useState(false);
+  const [showHighlight, setShowHighlight] = useState(false);
   const started = useRef(0);
   const progressRef = useRef(0);
 
@@ -85,7 +87,7 @@ export default function StoryViewer() {
 
   // Auto-advance with a progress bar. Pauses while the viewers list is open.
   useEffect(() => {
-    if (!current || showViewers) return;
+    if (!current || showViewers || showHighlight) return;
     started.current = Date.now() - progressRef.current * durationMs;
     const tick = setInterval(() => {
       const p = Math.min(1, (Date.now() - started.current) / durationMs);
@@ -97,7 +99,7 @@ export default function StoryViewer() {
       }
     }, 100);
     return () => clearInterval(tick);
-  }, [current, next, showViewers]);
+  }, [current, next, showViewers, showHighlight]);
 
   async function remove() {
     if (!current) return;
@@ -180,12 +182,16 @@ export default function StoryViewer() {
                 {views ?? 0} {views === 1 ? 'view' : 'views'}
               </Text>
             </Pressable>
+            <Text accessibilityRole="button" onPress={() => setShowHighlight(true)} style={{ color: '#fff', fontWeight: '700' }}>
+              Highlight
+            </Text>
             <Text accessibilityRole="button" onPress={remove} style={{ color: '#fff', fontWeight: '700' }}>
               Delete
             </Text>
           </View>
         </SafeAreaView>
       ) : null}
+      {isMine ? <HighlightSheet storyId={current.id} visible={showHighlight} onClose={() => setShowHighlight(false)} /> : null}
       {isMine ? <StoryViewers storyId={current.id} visible={showViewers} onClose={() => setShowViewers(false)} /> : null}
     </View>
   );

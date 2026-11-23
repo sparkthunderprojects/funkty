@@ -7,6 +7,7 @@ import { shareLink } from '../lib/share';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 import { ActionSheet, type SheetAction } from './ActionSheet';
+import { TagSheet } from './TagSheet';
 import { CollectionSheet, CreditsSheet, SeriesSheet } from './PostSheets';
 
 const reportReasons: [string, string][] = [
@@ -40,12 +41,13 @@ type Props = {
     series?: { id: string; title: string } | null;
     credits?: { position: number; role: string; name: string }[];
     addedUpdate?: { id: string; body: string; created_at: string };
+    tags?: FeedPost['post_tags'];
   }) => void;
   onDeleted: () => void;
   onMuted?: () => void;
 };
 
-type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'thanks';
+type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'tags' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
 export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
@@ -122,6 +124,12 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     if (!e) onEdited({ compare: next });
   }
 
+  const myTag = !mine && (post.post_tags ?? []).some((t) => t.tagged_id === profile?.id && t.status === 'approved');
+  async function removeMyTag() {
+    const { error: e } = await supabase.rpc('respond_tag', { p_post_id: post.id, p_accept: false });
+    if (!e) onEdited({ tags: (post.post_tags ?? []).filter((t) => t.tagged_id !== profile?.id) });
+  }
+
   async function remove() {
     const { error: e } = await supabase.rpc('delete_post', { p_post_id: post.id });
     if (e) return setError(friendlyError(e.message));
@@ -179,6 +187,10 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   }
   if (panel === 'credits') {
     return <CreditsSheet postId={post.id} initial={credits.map(({ role, name }) => ({ role, name }))} visible={visible} onClose={close} onSaved={(c) => onEdited({ credits: c })} />;
+  }
+
+  if (panel === 'tags') {
+    return <TagSheet postId={post.id} tags={post.post_tags ?? []} visible={visible} onClose={close} onChanged={(t) => onEdited({ tags: t })} />;
   }
 
   if (panel === 'update') {
@@ -270,6 +282,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: commentsEnabled ? 'Turn off commenting' : 'Turn on commenting', onPress: then(() => void toggleComments()) },
                 { label: spoiler ? 'Remove spoiler mark' : 'Mark as spoiler', onPress: then(() => void toggleSpoiler()) },
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
+                { label: 'Tag people', onPress: () => setPanel('tags') },
                 { label: 'Post an update', onPress: () => { setUpdateText(''); setPanel('update'); } },
                 { label: series ? `Series: ${series.title}` : 'Add to a series', onPress: () => setPanel('series') },
                 { label: credits.length ? 'Edit credits' : 'Add credits', onPress: () => setPanel('credits') },
@@ -279,6 +292,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 { label: 'Delete', onPress: () => setPanel('confirm-delete'), destructive: true },
               ]
             : [
+                ...(myTag ? [{ label: 'Remove me from this post', onPress: then(() => void removeMyTag()) }] : []),
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
                 { label: 'Save to collection', onPress: () => setPanel('collections') },
                 { label: 'Share', onPress: share },

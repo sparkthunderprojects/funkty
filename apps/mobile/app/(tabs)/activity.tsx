@@ -13,7 +13,7 @@ import { Screen } from '../../src/ui/Screen';
 
 type Notice = {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'follow_request';
+  type: 'like' | 'comment' | 'follow' | 'follow_request' | 'tag_request';
   post_id: string | null;
   actor_id: string;
   created_at: string;
@@ -30,6 +30,7 @@ const verbs: Record<Notice['type'], string> = {
   comment: 'commented on your post.',
   follow: 'started following you.',
   follow_request: 'requested to follow you.',
+  tag_request: 'wants to tag you in a post.',
 };
 
 export default function Activity() {
@@ -38,6 +39,7 @@ export default function Activity() {
   const { profile } = useSession();
   const [items, setItems] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingTags, setPendingTags] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -48,6 +50,8 @@ export default function Activity() {
       .order('id', { ascending: false })
       .limit(60);
     setItems((data ?? []) as unknown as Notice[]);
+    const { data: pend } = await supabase.from('post_tags').select('post_id').eq('tagged_id', profile.id).eq('status', 'pending');
+    setPendingTags(new Set((pend ?? []).map((r) => r.post_id)));
     setLoading(false);
     // Viewing the list marks everything read. The unread highlight stays until the next load.
     void supabase.rpc('mark_notifications_read');
@@ -61,6 +65,12 @@ export default function Activity() {
 
   async function respond(n: Notice, accept: boolean) {
     await supabase.rpc(accept ? 'accept_follow_request' : 'reject_follow_request', { p_follower: n.actor_id });
+    void load();
+  }
+
+  async function respondTag(n: Notice, accept: boolean) {
+    if (!n.post_id) return;
+    await supabase.rpc('respond_tag', { p_post_id: n.post_id, p_accept: accept });
     void load();
   }
 
@@ -107,6 +117,15 @@ export default function Activity() {
                   </View>
                   <View style={{ width: 84 }}>
                     <Button label="Decline" variant="secondary" onPress={() => respond(item, false)} />
+                  </View>
+                </View>
+              ) : item.type === 'tag_request' && item.post_id && pendingTags.has(item.post_id) ? (
+                <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                  <View style={{ width: 84 }}>
+                    <Button label="Approve" onPress={() => respondTag(item, true)} />
+                  </View>
+                  <View style={{ width: 84 }}>
+                    <Button label="Decline" variant="secondary" onPress={() => respondTag(item, false)} />
                   </View>
                 </View>
               ) : thumb && item.post_id ? (
