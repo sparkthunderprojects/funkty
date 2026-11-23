@@ -5,7 +5,7 @@ import { useTheme } from '../theme';
 export type SheetAction = { label: string; onPress: () => void; destructive?: boolean };
 
 /** Bottom sheet of actions, the same pattern as the profile menu on Instagram. */
-export function ActionSheet({ visible, onClose, actions }: { visible: boolean; onClose: () => void; actions: SheetAction[] }) {
+export function ActionSheet({ visible, onClose, actions, stay }: { visible: boolean; onClose: () => void; actions: SheetAction[]; stay?: boolean }) {
   const { colors, spacing } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -19,7 +19,8 @@ export function ActionSheet({ visible, onClose, actions }: { visible: boolean; o
               key={a.label}
               accessibilityRole="button"
               onPress={() => {
-                onClose();
+                // Multi-step sheets (confirm, report) stay open between steps; the action decides when to close.
+                if (!stay) onClose();
                 a.onPress();
               }}
               style={{ paddingVertical: spacing.md, paddingHorizontal: spacing.lg }}

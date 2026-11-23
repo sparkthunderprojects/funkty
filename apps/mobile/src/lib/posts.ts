@@ -17,6 +17,7 @@ export type Author = {
 export type FeedPost = {
   id: string;
   kind: string;
+  comments_enabled: boolean;
   caption: string | null;
   created_at: string;
   author_id: string;
@@ -35,7 +36,7 @@ export type FeedPost = {
   }[];
 };
 
-export const feedSelect = `id, kind, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
+export const feedSelect = `id, kind, comments_enabled, caption, created_at, author_id, profiles!posts_author_id_fkey(username, display_name, ${avatarEmbed}), post_stats(like_count, comment_count), post_media(position, alt_text, media_assets(storage_key, width, height, kind, variants))`;
 export const authorSelect = `username, display_name, ${avatarEmbed}`;
 
 export function mediaUrl(storageKey: string): string {

@@ -20,16 +20,6 @@ type Comment = {
   profiles: { username: string; avatar: { storage_key: string } | null } | null;
 };
 
-const reportReasons: [string, string][] = [
-  ['spam', 'Spam'],
-  ['nudity_sexual', 'Nudity or sexual content'],
-  ['harassment', 'Bullying or harassment'],
-  ['hate_speech', 'Hate speech'],
-  ['violence', 'Violence'],
-  ['self_harm', 'Self-harm'],
-  ['other', 'Something else'],
-];
-
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useSession();
@@ -42,9 +32,6 @@ export default function PostDetail() {
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [reporting, setReporting] = useState(false);
-  const [reported, setReported] = useState(false);
   const router = useRouter();
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -96,19 +83,6 @@ export default function PostDetail() {
   async function remove(commentId: string) {
     await supabase.rpc('delete_comment', { p_comment_id: commentId });
     void load();
-  }
-
-  async function deletePost() {
-    if (!id) return;
-    await supabase.rpc('delete_post', { p_post_id: id });
-    router.back();
-  }
-
-  async function report(code: string) {
-    if (!id) return;
-    await supabase.rpc('report_content', { p_target_type: 'post', p_target_id: id, p_reason_code: code });
-    setReporting(false);
-    setReported(true);
   }
 
   const threads = useMemo(() => {
@@ -173,7 +147,7 @@ export default function PostDetail() {
   return (
     <Screen scroll>
       <View style={{ marginHorizontal: -spacing.lg }}>
-        <PostCard post={post} liked={liked} saved={saved} />
+        <PostCard post={post} liked={liked} saved={saved} onDeleted={() => router.back()} />
       </View>
       <View>
         {threads.top.length === 0 ? (
@@ -209,43 +183,15 @@ export default function PostDetail() {
           })
         )}
       </View>
-      {post.author_id === profile?.id ? (
-        confirmDelete ? (
-          <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
-            <Text style={{ color: colors.text, fontSize: fontSize.body, flex: 1 }}>Delete this post for good?</Text>
-            <View style={{ width: 90 }}>
-              <Button label="Delete" onPress={deletePost} />
-            </View>
-            <View style={{ width: 90 }}>
-              <Button label="Cancel" variant="secondary" onPress={() => setConfirmDelete(false)} />
-            </View>
-          </View>
-        ) : (
-          <Text accessibilityRole="button" onPress={() => setConfirmDelete(true)} style={{ color: colors.textMuted, fontSize: fontSize.caption }}>
-            Delete post
-          </Text>
-        )
-      ) : reported ? (
-        <Text style={{ color: colors.textMuted, fontSize: fontSize.caption }}>Thanks. We will review this post.</Text>
-      ) : reporting ? (
-        <View style={{ gap: spacing.xs }}>
-          <Text style={{ color: colors.text, fontSize: fontSize.body, fontWeight: '700' }}>Why are you reporting this?</Text>
-          {reportReasons.map(([code, label]) => (
-            <Text key={code} accessibilityRole="button" onPress={() => report(code)} style={{ color: colors.primary, fontSize: fontSize.body }}>
-              {label}
-            </Text>
-          ))}
-        </View>
-      ) : (
-        <Text accessibilityRole="button" onPress={() => setReporting(true)} style={{ color: colors.textMuted, fontSize: fontSize.caption }}>
-          Report post
-        </Text>
-      )}
       {error ? (
         <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: fontSize.body }}>
           {error}
         </Text>
       ) : null}
+      {!post.comments_enabled ? (
+        <Text style={{ color: colors.textMuted, fontSize: 14, textAlign: 'center', paddingTop: spacing.sm }}>Comments are turned off for this post.</Text>
+      ) : (
+        <>
       {replyTo ? (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: 8, padding: spacing.sm }}>
           <Text style={{ color: colors.textMuted, fontSize: 13 }}>Replying to {replyTo.username}</Text>
@@ -280,6 +226,8 @@ export default function PostDetail() {
           Post
         </Text>
       </View>
+        </>
+      )}
     </Screen>
   );
 }

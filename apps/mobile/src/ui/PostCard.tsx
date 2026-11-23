@@ -10,6 +10,7 @@ import { Avatar } from './Avatar';
 import { Carousel } from './Carousel';
 import { Clip } from './Clip';
 import { Image } from 'expo-image';
+import { PostMenu } from './PostMenu';
 import { RichText } from './RichText';
 
 /** 1200 -> 1.2K, so counts stay short next to the icons. */
@@ -17,13 +18,17 @@ function compact(n: number): string {
   return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.0', '')}M` : n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : String(n);
 }
 
-type Props = { post: FeedPost; liked: boolean; saved: boolean };
+type Props = { post: FeedPost; liked: boolean; saved: boolean; onDeleted?: () => void };
 
-export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }: Props) {
+export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, onDeleted }: Props) {
   const { colors, fontSize, spacing } = useTheme();
   const [liked, setLiked] = useState(initiallyLiked);
   const [saved, setSaved] = useState(initiallySaved);
   const [likes, setLikes] = useState(post.post_stats?.like_count ?? 0);
+  const [menu, setMenu] = useState(false);
+  const [caption, setCaption] = useState(post.caption);
+  const [commentsEnabled, setCommentsEnabled] = useState(post.comments_enabled);
+  const [removed, setRemoved] = useState(false);
   const images = postImages(post);
   const video = postVideo(post);
   const [playing, setPlaying] = useState(false);
@@ -52,6 +57,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
     if (error) setSaved(!next);
   }
 
+  if (removed) return null;
   return (
     <View style={{ gap: spacing.sm, paddingBottom: spacing.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md }}>
@@ -61,12 +67,22 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
             <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}>{username}</Text>
           </Pressable>
         </Link>
-        <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
-          <Pressable accessibilityRole="button" accessibilityLabel="More options" hitSlop={12}>
-            <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
-          </Pressable>
-        </Link>
+        <Pressable accessibilityRole="button" accessibilityLabel="More options" onPress={() => setMenu(true)} hitSlop={12}>
+          <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
+        </Pressable>
       </View>
+      <PostMenu
+        post={post}
+        caption={caption}
+        commentsEnabled={commentsEnabled}
+        visible={menu}
+        onClose={() => setMenu(false)}
+        onEdited={(patch) => {
+          if (patch.caption !== undefined) setCaption(patch.caption);
+          if (patch.commentsEnabled !== undefined) setCommentsEnabled(patch.commentsEnabled);
+        }}
+        onDeleted={() => (onDeleted ? onDeleted() : setRemoved(true))}
+      />
       {video ? (
         playing ? (
           <View>
@@ -121,12 +137,12 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
           <Ionicons name={liked ? 'heart' : 'heart-outline'} size={27} color={liked ? colors.danger : colors.text} />
           <Text style={countText}>{compact(likes)}</Text>
         </Pressable>
-        <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
+        {commentsEnabled ? <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
           <Pressable accessibilityRole="link" accessibilityLabel="Comments" hitSlop={8} style={countStyle}>
             <Ionicons name="chatbubble-outline" size={24} color={colors.text} />
             <Text style={countText}>{compact(comments)}</Text>
           </Pressable>
-        </Link>
+        </Link> : null}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Share"
@@ -147,8 +163,8 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved }:
         </Pressable>
       </View>
       <View style={{ paddingHorizontal: spacing.md, gap: 2 }}>
-        {post.caption ? (
-          <RichText lead={username} text={post.caption} style={{ color: colors.text, fontSize: fontSize.body }} />
+        {caption ? (
+          <RichText lead={username} text={caption} style={{ color: colors.text, fontSize: fontSize.body }} />
         ) : null}
         {comments > 0 ? (
           <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
