@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { mediaUrl, timeAgo } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
@@ -66,6 +66,7 @@ export default function Activity() {
     <Screen>
       <Text style={{ color: colors.text, fontSize: fontSize.headline, fontWeight: '800' }}>Activity</Text>
       <FlatList
+        refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.primary} />}
         data={items}
         keyExtractor={(n) => n.id}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}

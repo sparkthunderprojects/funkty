@@ -12,6 +12,7 @@ import { Clip } from './Clip';
 import { Image } from 'expo-image';
 import { Glass } from './Glass';
 import { SpoilerVeil } from './SpoilerVeil';
+import { tap } from '../lib/haptics';
 import { PostMenu } from './PostMenu';
 import { RichText } from './RichText';
 
@@ -46,6 +47,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
 
   async function toggleLike() {
     const next = !liked;
+    tap();
     setLiked(next);
     setLikes((n) => Math.max(0, n + (next ? 1 : -1)));
     const { error } = await supabase.rpc(next ? 'like_post' : 'unlike_post', { p_post_id: post.id });
@@ -57,6 +59,7 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
 
   async function toggleSave() {
     const next = !saved;
+    tap();
     setSaved(next);
     const { error } = await supabase.rpc(next ? 'save_post' : 'unsave_post', { p_post_id: post.id });
     if (error) setSaved(!next);

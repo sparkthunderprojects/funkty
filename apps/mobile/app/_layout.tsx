@@ -35,6 +35,8 @@ function Routes() {
         <Stack.Screen name="settings/blocked" options={pushed('Blocked accounts')} />
         <Stack.Screen name="settings/muted" options={pushed('Muted accounts')} />
         <Stack.Screen name="settings/liked" options={pushed('Posts you\'ve liked')} />
+        <Stack.Screen name="settings/notes" options={pushed('Your notes')} />
+        <Stack.Screen name="settings/week" options={pushed('Your week')} />
         <Stack.Screen name="edit-profile" options={pushed('Edit profile')} />
         <Stack.Screen name="tag/[tag]" options={pushed('Hashtag')} />
         <Stack.Screen name="connections/[username]" options={pushed('People')} />
