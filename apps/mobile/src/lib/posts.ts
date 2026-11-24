@@ -128,6 +128,10 @@ export function friendlyError(message: string | undefined): string {
       return 'A highlight can hold up to 50 stories.';
     case 'invalid_title':
       return 'Give the highlight a name of 1 to 20 characters.';
+    case 'too_many_close_friends':
+      return 'Your close friends list can have up to 500 people.';
+    case 'invalid_audience':
+      return 'Choose who can see this story.';
     case 'own_post':
       return 'You cannot repost your own post.';
     case 'note_too_long':
@@ -208,10 +212,14 @@ export async function publishPhotos(assets: Picked[], userId: string, caption: s
   return published.data.id;
 }
 
-export async function publishStoryPhoto(asset: Picked, userId: string): Promise<void> {
+export async function publishStoryPhoto(asset: Picked, userId: string, closeFriendsOnly = false): Promise<void> {
   const id = await uploadImage(asset, userId);
-  const { error } = await supabase.rpc('publish_story', { p_media_id: id });
-  if (error) throw new Error(friendlyError(error.message));
+  const { data, error } = await supabase.rpc('publish_story', { p_media_id: id });
+  if (error || !data) throw new Error(friendlyError(error?.message));
+  if (closeFriendsOnly) {
+    const set = await supabase.rpc('set_story_audience', { p_story_id: data.id, p_audience: 'close_friends' });
+    if (set.error) throw new Error(friendlyError(set.error.message));
+  }
 }
 
 export async function setAvatar(asset: Picked, userId: string): Promise<void> {

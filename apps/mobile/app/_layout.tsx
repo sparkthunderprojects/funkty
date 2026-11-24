@@ -51,6 +51,8 @@ function Routes() {
         <Stack.Screen name="find-friends" options={pushed('Find friends')} />
         <Stack.Screen name="qr" options={pushed('QR code')} />
         <Stack.Screen name="settings/feed" options={pushed('Feed preferences')} />
+        <Stack.Screen name="settings/close-friends" options={pushed('Close friends')} />
+        <Stack.Screen name="settings/story-archive" options={pushed('Story archive')} />
       </Stack.Protected>
     </Stack>
   );

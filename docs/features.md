@@ -169,8 +169,16 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 20. Close friends, story replies and message tools
+- Close friends: Settings > Close friends. Pick people you follow; the list is private. When you share a story, "Close friends only" limits it to them; they see a green "Close friends" tag and a green star on the story card.
+- Reply to a story or react with one tap (heart, laugh, wow, sad, fire, thumbs up). Replies arrive in Messages marked "Replied to your story".
+- Story archive: Settings > Story archive keeps expired stories for you only; add them to a highlight or delete them.
+- Messages: press and hold a message to react, remove your reaction, or unsend it (unsent messages show as "Message unsent").
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).
 - Content scanning, message-request logic on the server, pgTAP in CI.
-- Ideas ready to build: close friends for stories, story replies and reactions, comment likes, message reactions and unsend, story archive, drafts and scheduled posts.
+- Ideas ready to build: comment likes, drafts and scheduled posts.

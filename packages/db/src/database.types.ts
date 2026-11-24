@@ -356,9 +356,13 @@ export type Database = {
           read_at: string | null
           recipient_id: string
           sender_id: string
+          story_id: string | null
+          unsent_at: string | null
         }
         Insert: {
           body: string
+          story_id?: string | null
+          unsent_at?: string | null
           created_at?: string
           id?: string
           read_at?: string | null
@@ -372,6 +376,8 @@ export type Database = {
           read_at?: string | null
           recipient_id?: string
           sender_id?: string
+          story_id?: string | null
+          unsent_at?: string | null
         }
         Relationships: [
           {
@@ -454,6 +460,7 @@ export type Database = {
       }
       stories: {
         Row: {
+          audience: string
           author_id: string
           created_at: string
           deleted_at: string | null
@@ -462,6 +469,7 @@ export type Database = {
           media_id: string
         }
         Insert: {
+          audience?: string
           author_id: string
           created_at?: string
           deleted_at?: string | null
@@ -470,6 +478,7 @@ export type Database = {
           media_id: string
         }
         Update: {
+          audience?: string
           author_id?: string
           created_at?: string
           deleted_at?: string | null
@@ -789,6 +798,18 @@ export type Database = {
         Row: { user_id: string; post_id: string; note: string | null; created_at: string }
         Insert: { user_id: string; post_id: string; note?: string | null; created_at?: string }
         Update: { user_id?: string; post_id?: string; note?: string | null; created_at?: string }
+        Relationships: []
+      }
+      close_friends: {
+        Row: { owner_id: string; friend_id: string; created_at: string }
+        Insert: { owner_id: string; friend_id: string; created_at?: string }
+        Update: { owner_id?: string; friend_id?: string; created_at?: string }
+        Relationships: []
+      }
+      message_reactions: {
+        Row: { message_id: string; user_id: string; emoji: string; created_at: string }
+        Insert: { message_id: string; user_id: string; emoji: string; created_at?: string }
+        Update: { message_id?: string; user_id?: string; emoji?: string; created_at?: string }
         Relationships: []
       }
       highlights: {
@@ -1409,6 +1430,11 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      set_close_friend: { Args: { p_friend: string; p_in: boolean }; Returns: undefined }
+      set_story_audience: { Args: { p_story_id: string; p_audience: string }; Returns: undefined }
+      reply_to_story: { Args: { p_story_id: string; p_body: string }; Returns: Database['public']['Tables']['messages']['Row'] }
+      react_message: { Args: { p_message: string; p_emoji: string | null }; Returns: undefined }
+      unsend_message: { Args: { p_message: string }; Returns: undefined }
       not_interested: { Args: { p_post: string }; Returns: undefined }
       reset_not_interested: { Args: Record<string, never>; Returns: undefined }
       mute_topic: { Args: { p_tag: string }; Returns: undefined }

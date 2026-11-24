@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { mediaUrl, timeAgo } from '../../src/lib/posts';
+import { friendlyError, mediaUrl, timeAgo } from '../../src/lib/posts';
+import { tap } from '../../src/lib/haptics';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { Avatar } from '../../src/ui/Avatar';
@@ -12,7 +13,8 @@ import { ActionSheet } from '../../src/ui/ActionSheet';
 import { HighlightSheet } from '../../src/ui/HighlightSheet';
 import { StoryViewers } from '../../src/ui/StoryViewers';
 
-type Story = { id: string; created_at: string; media_assets: { storage_key: string } | null };
+type Story = { id: string; created_at: string; audience: string; media_assets: { storage_key: string } | null };
+const quick = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
 
 const durationMs = 5000;
 
@@ -30,6 +32,9 @@ export default function StoryViewer() {
   const [showViewers, setShowViewers] = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [reply, setReply] = useState('');
+  const [replying, setReplying] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
   const started = useRef(0);
   const progressRef = useRef(0);
 
@@ -46,7 +51,7 @@ export default function StoryViewer() {
       setAvatar((person as unknown as { avatar: { storage_key: string } | null }).avatar?.storage_key ?? null);
       const { data } = await supabase
         .from('stories')
-        .select('id, created_at, media_assets(storage_key)')
+        .select('id, created_at, audience, media_assets(storage_key)')
         .eq('author_id', person.id)
         .gt('expires_at', new Date().toISOString())
         .order('id', { ascending: true });
@@ -89,7 +94,7 @@ export default function StoryViewer() {
 
   // Auto-advance with a progress bar. Pauses while the viewers list is open.
   useEffect(() => {
-    if (!current || showViewers || showHighlight || showMenu) return;
+    if (!current || showViewers || showHighlight || showMenu || replying) return;
     started.current = Date.now() - progressRef.current * durationMs;
     const tick = setInterval(() => {
       const p = Math.min(1, (Date.now() - started.current) / durationMs);
@@ -101,7 +106,19 @@ export default function StoryViewer() {
       }
     }, 100);
     return () => clearInterval(tick);
-  }, [current, next, showViewers, showHighlight, showMenu]);
+  }, [current, next, showViewers, showHighlight, showMenu, replying]);
+
+  async function sendReply(text: string) {
+    if (!current || !text.trim()) return;
+    tap();
+    const { error } = await supabase.rpc('reply_to_story', { p_story_id: current.id, p_body: text });
+    setSent(error ? friendlyError(error.message) : 'Sent');
+    if (!error) {
+      setReply('');
+      setReplying(false);
+    }
+    setTimeout(() => setSent(null), 1800);
+  }
 
   async function remove() {
     if (!current) return;
@@ -169,6 +186,12 @@ export default function StoryViewer() {
           <Avatar username={String(username)} storageKey={avatar} size={32} />
           <Text style={{ color: '#fff', fontWeight: '700' }}>{username}</Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)' }}>{timeAgo(current.created_at)}</Text>
+          {current.audience === 'close_friends' ? (
+            <View accessibilityLabel="Close friends story" style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#22A559', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Ionicons name="star" size={12} color="#fff" />
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Close friends</Text>
+            </View>
+          ) : null}
           <View style={{ flex: 1 }} />
           {!isMine ? (
             <Pressable accessibilityRole="button" accessibilityLabel="More options" onPress={() => setShowMenu(true)} hitSlop={12} style={{ marginRight: 12 }}>
@@ -197,6 +220,42 @@ export default function StoryViewer() {
             </Text>
           </View>
         </SafeAreaView>
+      ) : null}
+      {!isMine ? (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }} pointerEvents="box-none">
+          <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={{ padding: 12, gap: 10 }}>
+            {sent ? <Text accessibilityRole="alert" style={{ color: '#fff', textAlign: 'center', fontWeight: '700' }}>{sent}</Text> : null}
+            {replying ? (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                {quick.map((e) => (
+                  <Pressable key={e} accessibilityRole="button" accessibilityLabel={`React ${e}`} onPress={() => void sendReply(e)} hitSlop={6}>
+                    <Text style={{ fontSize: 28 }}>{e}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TextInput
+                accessibilityLabel={`Reply to ${String(username)}`}
+                value={reply}
+                onChangeText={setReply}
+                onFocus={() => setReplying(true)}
+                onBlur={() => setReplying(false)}
+                maxLength={500}
+                placeholder={`Reply to ${String(username)}…`}
+                placeholderTextColor="rgba(255,255,255,0.7)"
+                returnKeyType="send"
+                onSubmitEditing={() => void sendReply(reply)}
+                style={{ flex: 1, color: '#fff', borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15 }}
+              />
+              {reply.trim() ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Send reply" onPress={() => void sendReply(reply)} hitSlop={8}>
+                  <Ionicons name="send" size={24} color="#fff" />
+                </Pressable>
+              ) : null}
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       ) : null}
       {!isMine && authorId ? (
         <ActionSheet

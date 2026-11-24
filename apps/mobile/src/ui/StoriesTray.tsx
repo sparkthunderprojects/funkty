@@ -6,17 +6,18 @@ import { useSession } from '../lib/session';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../theme';
 import { Image } from 'expo-image';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { RingAvatar } from './RingAvatar';
 
 type Row = {
   id: string;
   author_id: string;
   profiles: { username: string; avatar: { storage_key: string } | null } | null;
+  audience: string;
   media_assets: { storage_key: string } | null;
 };
 
-type Ring = { authorId: string; username: string; avatar: string | null; cover: string | null; seen: boolean };
+type Ring = { authorId: string; username: string; avatar: string | null; cover: string | null; seen: boolean; close: boolean };
 
 export function StoriesTray() {
   const { colors, fontSize, spacing } = useTheme();
@@ -32,7 +33,7 @@ export function StoriesTray() {
       supabase
         .from('stories')
         .select(
-          'id, author_id, media_assets(storage_key), profiles!stories_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))',
+          'id, author_id, audience, media_assets(storage_key), profiles!stories_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))',
         )
         .gt('expires_at', new Date().toISOString())
         .order('id', { ascending: false })
@@ -52,6 +53,7 @@ export function StoriesTray() {
       if (existing) {
         existing.unseen = existing.unseen || unseen;
         existing.ring.seen = !existing.unseen;
+        existing.ring.close = existing.ring.close || row.audience === 'close_friends';
       } else {
         byAuthor.set(row.author_id, {
           unseen,
@@ -61,6 +63,7 @@ export function StoriesTray() {
             avatar: row.profiles?.avatar?.storage_key ?? null,
             cover: row.media_assets?.storage_key ?? null,
             seen: !unseen,
+            close: row.audience === 'close_friends',
           },
         });
       }
@@ -145,7 +148,11 @@ export function StoriesTray() {
           onPress={() => router.push({ pathname: '/story/[username]', params: { username: r.username } })}
           style={{ alignItems: 'center', width: w }}
         >
-          {card(r.cover ?? r.avatar, r.username)}
+          {card(r.cover ?? r.avatar, r.username, r.close ? (
+            <View accessibilityLabel="Close friends" style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: '#22A559', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="star" size={14} color="#fff" />
+            </View>
+          ) : null)}
           <View style={{ position: 'absolute', left: 0, right: 0, top: h - 52, alignItems: 'center' }}>
             <RingAvatar username={r.username} storageKey={r.avatar} size={44} seen={r.seen} />
           </View>

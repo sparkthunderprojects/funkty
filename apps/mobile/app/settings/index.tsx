@@ -97,6 +97,8 @@ export default function Settings() {
           </View>
         </View>
         <View style={{ height: 1, backgroundColor: colors.border }} />
+        <Row icon="star-outline" label="Close friends" onPress={() => router.push('/settings/close-friends')} />
+        <Row icon="time-outline" label="Story archive" onPress={() => router.push('/settings/story-archive')} />
         <Row icon="options-outline" label="Feed preferences" onPress={() => router.push('/settings/feed')} />
         <Row icon="person-add-outline" label="Find and invite friends" onPress={() => router.push('/find-friends')} />
         <Row icon="heart-outline" label="Posts you've liked" onPress={() => router.push('/settings/liked')} />

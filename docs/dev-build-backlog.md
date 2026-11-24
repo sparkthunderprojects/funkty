@@ -52,7 +52,8 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 
 ## Ideas not built yet (buildable now)
 
-- Close friends list for stories, story replies and reactions, comment likes, message reactions and unsend, story archive, scheduled posts and drafts.
+- Comment likes, scheduled posts and drafts.
+- Story reply notifications, reactions shown on the story viewer for the author, close friends for posts.
 
 ### From the TikTok audit (2026-11-23)
 

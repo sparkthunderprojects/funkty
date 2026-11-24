@@ -43,6 +43,7 @@ export default function Create() {
   const [caption, setCaption] = useState('');
   const [spoiler, setSpoiler] = useState(false);
   const [compare, setCompare] = useState(false);
+  const [closeOnly, setCloseOnly] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [libraryDenied, setLibraryDenied] = useState(false);
@@ -134,7 +135,7 @@ export default function Create() {
       } else {
         const rendered = [];
         for (const item of items) rendered.push(await renderEdit(item, item.edit, maxImageWidth));
-        if (mode === 'story') await publishStoryPhoto(rendered[0]!, profile.id);
+        if (mode === 'story') await publishStoryPhoto(rendered[0]!, profile.id, closeOnly);
         else {
           const postId = await publishPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''), spoiler);
           if (compare && items.length === 2) await supabase.rpc('set_post_compare', { p_post_id: postId, p_on: true });
@@ -145,6 +146,7 @@ export default function Create() {
       setCaption('');
       setSpoiler(false);
       setCompare(false);
+      setCloseOnly(false);
       setStep('select');
       router.navigate(wasVideo ? '/reels' : '/');
     } catch (e) {
@@ -285,6 +287,16 @@ export default function Create() {
               <Text style={{ flex: 1, color: colors.textMuted, fontSize: 14 }}>Your story disappears after 24 hours.</Text>
             )}
           </View>
+          {mode === 'story' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <Ionicons name="star" size={22} color="#22A559" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 16 }}>Close friends only</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>Only people on your close friends list can see it.</Text>
+              </View>
+              <Switch accessibilityLabel="Close friends only" value={closeOnly} onValueChange={setCloseOnly} />
+            </View>
+          ) : null}
           {mode !== 'story' ? <CharCount value={caption} max={2200} /> : null}
           {mode !== 'story' ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
