@@ -1391,6 +1391,7 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      friend_suggestions: { Args: { p_limit?: number }; Returns: { user_id: string; mutual_count: number }[] }
       create_collection: { Args: { p_name: string }; Returns: Database['public']['Tables']['collections']['Row'] }
       set_collection_post: { Args: { p_collection_id: string; p_in: boolean; p_post_id: string }; Returns: undefined }
       delete_collection: { Args: { p_collection_id: string }; Returns: undefined }

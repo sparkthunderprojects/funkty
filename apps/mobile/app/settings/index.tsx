@@ -97,6 +97,7 @@ export default function Settings() {
           </View>
         </View>
         <View style={{ height: 1, backgroundColor: colors.border }} />
+        <Row icon="person-add-outline" label="Find and invite friends" onPress={() => router.push('/find-friends')} />
         <Row icon="heart-outline" label="Posts you've liked" onPress={() => router.push('/settings/liked')} />
         <Row icon="stats-chart-outline" label="Your week on Funkty" onPress={() => router.push('/settings/week')} />
         <Row icon="document-text-outline" label="Your private notes" onPress={() => router.push('/settings/notes')} />

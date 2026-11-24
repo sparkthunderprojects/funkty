@@ -53,9 +53,12 @@ export function SuggestedPeople() {
   if (people.length === 0) return null;
   return (
     <View style={{ paddingBottom: spacing.sm }}>
-      <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
-        Suggested for you
-      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+        <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15 }}>Suggested for you</Text>
+        <Pressable accessibilityRole="link" accessibilityLabel="Find friends" onPress={() => router.push('/find-friends')} hitSlop={8}>
+          <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Find friends</Text>
+        </Pressable>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, gap: spacing.sm }}>
         {people.map((p) => {
           const s = state[p.id];

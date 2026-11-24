@@ -59,7 +59,8 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 Buildable now (Expo Go + Supabase):
 - Not interested / Manage topics / Refresh my feed (feed controls).
 - Repost with a short note.
-- Invite friends (share sheet with a personal invite link) and Find friends (search, suggestions, optional contact matching).
+- Find contacts (match phone contacts to Funkty accounts): needs an opt-in "let people find me by email or phone" setting and hashed matching on the server first.
+- Invite counts (how many people joined from your invite).
 - Shared collections (invite friends to one saved collection).
 - Friends tab (posts from mutual follows).
 - Screen time: daily limit, break reminders, sleep reminder, weekly recap.

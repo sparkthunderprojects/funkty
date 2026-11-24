@@ -48,6 +48,8 @@ function Routes() {
         <Stack.Screen name="edit-profile" options={pushed('Edit profile')} />
         <Stack.Screen name="tag/[tag]" options={pushed('Hashtag')} />
         <Stack.Screen name="connections/[username]" options={pushed('People')} />
+        <Stack.Screen name="find-friends" options={pushed('Find friends')} />
+        <Stack.Screen name="qr" options={pushed('QR code')} />
       </Stack.Protected>
     </Stack>
   );

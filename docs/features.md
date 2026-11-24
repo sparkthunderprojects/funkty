@@ -154,6 +154,13 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 18. Find friends and invites
+- Find friends screen (Settings, or "Find friends" on the Suggested strip): search by name or username, Follow back list, People you may know (from mutual follows, server function `friend_suggestions`).
+- Invite friends: one-tap WhatsApp, Telegram, X, Facebook, Messages, Email, Copy link, and the phone share sheet for every other app. Links open your profile.
+- QR code: show your profile code, scan a friend's code with the camera.
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).
