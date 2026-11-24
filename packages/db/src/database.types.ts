@@ -830,6 +830,12 @@ export type Database = {
           { foreignKeyName: "collection_members_collection_id_fkey"; columns: ["collection_id"]; isOneToOne: false; referencedRelation: "collections"; referencedColumns: ["id"] },
         ]
       }
+      contact_discovery: {
+        Row: { user_id: string; discoverable: boolean; email_hash: string | null; updated_at: string }
+        Insert: { user_id: string; discoverable?: boolean; email_hash?: string | null; updated_at?: string }
+        Update: { user_id?: string; discoverable?: boolean; email_hash?: string | null; updated_at?: string }
+        Relationships: []
+      }
       comment_likes: {
         Row: { comment_id: string; user_id: string; created_at: string }
         Insert: { comment_id: string; user_id: string; created_at?: string }
@@ -1460,6 +1466,8 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      set_discoverable: { Args: { p_on: boolean }; Returns: undefined }
+      match_contacts: { Args: { p_hashes: string[] }; Returns: { user_id: string }[] }
       invite_to_collection: { Args: { p_collection_id: string; p_user: string }; Returns: undefined }
       respond_collection_invite: { Args: { p_collection_id: string; p_accept: boolean }; Returns: undefined }
       remove_collection_member: { Args: { p_collection_id: string; p_user: string }; Returns: undefined }

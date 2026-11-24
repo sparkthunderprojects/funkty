@@ -6,11 +6,13 @@ import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { tap } from '../src/lib/haptics';
 import { inviteChannels, inviteUrl, inviteVia, inviteWithSheet } from '../src/lib/invite';
+import { contactsSupported, findContacts } from '../src/lib/contacts';
 import { loadMuted } from '../src/lib/mutes';
 import { useSession } from '../src/lib/session';
 import { supabase } from '../src/lib/supabase';
 import { useTheme } from '../src/theme';
 import { Avatar } from '../src/ui/Avatar';
+import { DiscoverSwitch } from '../src/ui/DiscoverSwitch';
 
 type Person = { id: string; username: string; display_name: string | null; avatar: { storage_key: string } | null; note?: string };
 const select = 'id, username, display_name, avatar:media_assets!profiles_avatar_media_fk(storage_key)';
@@ -26,6 +28,10 @@ export default function FindFriends() {
   const [followBack, setFollowBack] = useState<Person[]>([]);
   const [state, setState] = useState<Record<string, 'active' | 'pending'>>({});
   const [copied, setCopied] = useState(false);
+  const [contacts, setContacts] = useState<Person[] | null>(null);
+  const [contactsMsg, setContactsMsg] = useState<string | null>(null);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const query = clean(term);
 
   const load = useCallback(async () => {
@@ -73,6 +79,32 @@ export default function FindFriends() {
     tap();
     const { data, error } = await supabase.rpc('follow_user', { p_target: id });
     if (!error && (data === 'active' || data === 'pending')) setState((s) => ({ ...s, [id]: data }));
+  }
+
+  async function runContacts() {
+    setSearching(true);
+    setContactsMsg(null);
+    const r = await findContacts();
+    if (!r.ok) {
+      setSearching(false);
+      setContactsMsg(
+        r.reason === 'denied' ? 'Funkty needs permission to read your contacts. You can allow it in your phone settings.'
+        : r.reason === 'unsupported' ? 'Find contacts works in the phone app.'
+        : r.reason === 'rate_limited' ? 'You have searched a lot today. Try again tomorrow.'
+        : 'Something went wrong. Try again.',
+      );
+      return;
+    }
+    const following = await supabase.from('follows').select('followee_id').eq('follower_id', profile!.id);
+    const already = new Set((following.data ?? []).map((f) => f.followee_id));
+    const ids = r.ids.filter((id) => !already.has(id));
+    if (ids.length === 0) {
+      setContacts([]);
+    } else {
+      const { data } = await supabase.from('profiles').select(select).in('id', ids);
+      setContacts(((data ?? []) as unknown as Person[]).map((p) => ({ ...p, note: 'In your contacts' })));
+    }
+    setSearching(false);
   }
 
   if (!profile) return null;
@@ -148,6 +180,46 @@ export default function FindFriends() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
+
+          {contactsSupported ? (
+            <View style={{ paddingHorizontal: spacing.lg, paddingVertical: 12, gap: spacing.sm }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Find contacts"
+                onPress={() => setContactsOpen((v) => !v)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}
+              >
+                <Ionicons name="people-outline" size={26} color={colors.text} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>Find contacts</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>See which of your contacts are on Funkty.</Text>
+                </View>
+                <Ionicons name={contactsOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+              </Pressable>
+              {contactsOpen ? (
+                <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: spacing.md, gap: spacing.md }}>
+                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+                    Funkty reads the email addresses in your contacts on your phone, scrambles them, and only the scrambled versions are sent. Names and numbers never leave your phone, and nothing is saved. You only see people who chose to be found.
+                  </Text>
+                  <Pressable accessibilityRole="button" disabled={searching} onPress={() => void runContacts()} style={{ backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center', opacity: searching ? 0.6 : 1 }}>
+                    <Text style={{ color: colors.onPrimary, fontWeight: '700' }}>{searching ? 'Looking…' : 'Find my contacts'}</Text>
+                  </Pressable>
+                  {contactsMsg ? <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: 13 }}>{contactsMsg}</Text> : null}
+                  <DiscoverSwitch />
+                </View>
+              ) : null}
+              {contacts ? (
+                contacts.length === 0 ? (
+                  <Text style={{ color: colors.textMuted, fontSize: 13 }}>No one new from your contacts yet. Invite them below.</Text>
+                ) : (
+                  <View style={{ marginHorizontal: -spacing.lg }}>
+                    <Heading>From your contacts</Heading>
+                    {contacts.map((p) => <PersonRow key={p.id} p={p} />)}
+                  </View>
+                )
+              ) : null}
+            </View>
+          ) : null}
 
           <Heading>Invite friends</Heading>
           <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>Share your profile so friends can find you.</Text>

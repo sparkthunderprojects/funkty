@@ -7,6 +7,7 @@ import { friendlyError } from '../../src/lib/posts';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
+import { DiscoverSwitch } from '../../src/ui/DiscoverSwitch';
 
 type Controls = { require: boolean; words: string[]; reposts: boolean };
 
@@ -92,6 +93,7 @@ export default function CommentControls() {
           </View>
           <Text style={muted}>When off, other people can't repost your posts to their followers. Existing reposts stay until they remove them.</Text>
         </View>
+        <DiscoverSwitch />
         {error ? <Text accessibilityRole="alert" style={{ color: colors.danger }}>{error}</Text> : null}
       </ScrollView>
     </SafeAreaView>

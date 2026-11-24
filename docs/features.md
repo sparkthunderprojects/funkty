@@ -208,6 +208,13 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 25. Find contacts
+- Find and invite friends > Find contacts: after you allow contacts access, Funkty scrambles (SHA-256) the email addresses in your contacts on your phone and sends only the scrambled values; names and numbers never leave the phone and nothing is stored. You see people who opted in, with a Follow button.
+- Opt-in: "Let contacts find me" (also in Comment and repost controls). Off by default. Turning it on stores a scrambled version of your account email, never shown to anyone; turning it off deletes it.
+- Limits: 1000 addresses per check, 5 checks a day. Works in the phone app only.
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).

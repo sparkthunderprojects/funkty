@@ -59,7 +59,7 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 
 Buildable now (Expo Go + Supabase):
 - A Reposts tab on profiles and unrepost from the feed banner.
-- Find contacts (match phone contacts to Funkty accounts): needs an opt-in "let people find me by email or phone" setting and hashed matching on the server first.
+- Find contacts by phone number: needs phone sign-in or a verified phone on the account (matching by email is done).
 - Invite counts (how many people joined from your invite).
 - Privacy toggles still to do: who can download, who can remix, activity status, post and profile view history.
 - Accessibility still to do: captions on by default (needs captions on video first). Comments with media filter.

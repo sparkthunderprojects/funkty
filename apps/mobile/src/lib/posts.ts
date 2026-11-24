@@ -103,6 +103,8 @@ export function friendlyError(message: string | undefined): string {
       return 'This person has turned off reposts.';
     case 'invalid_words':
       return 'Use up to 50 words or phrases, each up to 40 characters.';
+    case 'too_many_contacts':
+      return 'That is too many contacts to check at once.';
     case 'not_mutual':
       return 'You can only invite people who follow you back.';
     case 'too_many_members':
