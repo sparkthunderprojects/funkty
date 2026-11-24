@@ -195,6 +195,11 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 23. More notifications
+- Activity now shows: someone reposted your post, liked your comment, replied to your story (with a View link to the message), and a comment waiting for your approval. Approving a held comment turns its notice into a normal comment notice; removing it clears the notice. Unliking or unreposting removes the notice. No notice for your own actions or from blocked people.
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).

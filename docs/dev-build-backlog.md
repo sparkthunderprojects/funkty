@@ -52,20 +52,19 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 
 ## Ideas not built yet (buildable now)
 
-- Drafts and scheduling for videos and reels, a custom date and time picker, and notifying authors about comment likes.
-- Story reply notifications, reactions shown on the story viewer for the author, close friends for posts.
+- Drafts and scheduling for videos and reels, a custom date and time picker.
+- Reactions shown on the story viewer for the author, close friends for posts.
 
 ### From the TikTok audit (2026-11-23)
 
 Buildable now (Expo Go + Supabase):
-- Repost notifications for the author, a Reposts tab on profiles, and unrepost from the feed banner.
+- A Reposts tab on profiles and unrepost from the feed banner.
 - Find contacts (match phone contacts to Funkty accounts): needs an opt-in "let people find me by email or phone" setting and hashed matching on the server first.
 - Invite counts (how many people joined from your invite).
 - Shared collections (invite friends to one saved collection).
 - Privacy toggles still to do: who can download, who can remix, activity status, post and profile view history.
 - Accessibility still to do: captions on by default (needs captions on video first). Comments with media filter.
 - Screen time is kept per device; syncing across devices and a parent-set limit need server work.
-- Notify authors when a comment is held for approval.
 - Series planner for creators.
 
 Needs a development build or heavy media work:

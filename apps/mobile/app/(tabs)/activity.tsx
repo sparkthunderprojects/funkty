@@ -14,7 +14,7 @@ import { Screen } from '../../src/ui/Screen';
 
 type Notice = {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'follow_request' | 'tag_request';
+  type: 'like' | 'comment' | 'follow' | 'follow_request' | 'tag_request' | 'repost' | 'comment_like' | 'story_reply' | 'comment_held';
   post_id: string | null;
   actor_id: string;
   created_at: string;
@@ -32,6 +32,10 @@ const verbs: Record<Notice['type'], string> = {
   follow: 'started following you.',
   follow_request: 'requested to follow you.',
   tag_request: 'wants to tag you in a post.',
+  repost: 'reposted your post.',
+  comment_like: 'liked your comment.',
+  story_reply: 'replied to your story.',
+  comment_held: 'commented and is waiting for your approval.',
 };
 
 export default function Activity() {
@@ -89,7 +93,7 @@ export default function Activity() {
         ListEmptyComponent={
           loading ? undefined : (
             <Text style={{ color: colors.textMuted, fontSize: fontSize.body }}>
-              Nothing yet. Likes, comments and new followers show up here.
+              Nothing yet. Likes, comments, reposts, story replies and new followers show up here.
             </Text>
           )
         }
@@ -131,6 +135,12 @@ export default function Activity() {
                     <Button label="Decline" variant="secondary" onPress={() => respondTag(item, false)} />
                   </View>
                 </View>
+              ) : item.type === 'story_reply' ? (
+                <Link href={{ pathname: '/messages/[username]', params: { username } }} asChild>
+                  <Pressable accessibilityRole="link" accessibilityLabel="Open message">
+                    <Text style={{ color: colors.primary, fontWeight: '700' }}>View</Text>
+                  </Pressable>
+                </Link>
               ) : thumb && item.post_id ? (
                 <Link href={{ pathname: '/post/[id]', params: { id: item.post_id } }} asChild>
                   <Pressable accessibilityRole="link" accessibilityLabel="Open post">
