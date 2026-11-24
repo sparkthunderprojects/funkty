@@ -821,6 +821,15 @@ export type Database = {
         Update: { user_id?: string; require_comment_approval?: boolean; comment_words?: string[]; allow_reposts?: boolean; updated_at?: string }
         Relationships: []
       }
+      collection_members: {
+        Row: { collection_id: string; user_id: string; status: string; invited_by: string; created_at: string }
+        Insert: { collection_id: string; user_id: string; status?: string; invited_by: string; created_at?: string }
+        Update: { collection_id?: string; user_id?: string; status?: string; invited_by?: string; created_at?: string }
+        Relationships: [
+          { foreignKeyName: "collection_members_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "collection_members_collection_id_fkey"; columns: ["collection_id"]; isOneToOne: false; referencedRelation: "collections"; referencedColumns: ["id"] },
+        ]
+      }
       comment_likes: {
         Row: { comment_id: string; user_id: string; created_at: string }
         Insert: { comment_id: string; user_id: string; created_at?: string }
@@ -1451,6 +1460,9 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      invite_to_collection: { Args: { p_collection_id: string; p_user: string }; Returns: undefined }
+      respond_collection_invite: { Args: { p_collection_id: string; p_accept: boolean }; Returns: undefined }
+      remove_collection_member: { Args: { p_collection_id: string; p_user: string }; Returns: undefined }
       set_account_controls: { Args: { p_require_approval: boolean; p_words: string[]; p_allow_reposts: boolean }; Returns: undefined }
       approve_comment: { Args: { p_comment_id: string }; Returns: undefined }
       reject_comment: { Args: { p_comment_id: string }; Returns: undefined }

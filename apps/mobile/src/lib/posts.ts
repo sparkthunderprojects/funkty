@@ -103,6 +103,12 @@ export function friendlyError(message: string | undefined): string {
       return 'This person has turned off reposts.';
     case 'invalid_words':
       return 'Use up to 50 words or phrases, each up to 40 characters.';
+    case 'not_mutual':
+      return 'You can only invite people who follow you back.';
+    case 'too_many_members':
+      return 'A shared collection can have up to 10 people.';
+    case 'collection_full':
+      return 'This collection is full (500 posts).';
     case 'rate_limited':
       return 'You are doing that too quickly. Try again in a little while.';
     case 'not_found':

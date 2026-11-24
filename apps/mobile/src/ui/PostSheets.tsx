@@ -69,7 +69,7 @@ function PickRow({ label, selected, onPress }: { label: string; selected: boolea
   );
 }
 
-/** Choose which of the person's private collections a post belongs to. Adding also saves it. */
+/** Choose which of the person's collections (their own or shared with them) a post belongs to. Adding also saves it. */
 export function CollectionSheet({ postId, visible, onClose, onSaved }: SheetProps & { onSaved?: () => void }) {
   const { profile } = useSession();
   const [items, setItems] = useState<{ id: string; name: string }[]>([]);
@@ -78,11 +78,14 @@ export function CollectionSheet({ postId, visible, onClose, onSaved }: SheetProp
 
   const load = useCallback(async () => {
     if (!profile) return;
-    const [c, m] = await Promise.all([
-      supabase.from('collections').select('id, name').eq('user_id', profile.id).order('created_at', { ascending: false }),
+    const [c, m, inv] = await Promise.all([
+      supabase.from('collections').select('id, name').order('created_at', { ascending: false }),
       supabase.from('collection_posts').select('collection_id').eq('user_id', profile.id).eq('post_id', postId),
+      supabase.from('collection_members').select('collection_id').eq('user_id', profile.id).eq('status', 'invited'),
     ]);
-    setItems(c.data ?? []);
+    // Collections you were invited to but have not joined yet are not places to save to.
+    const pending = new Set((inv.data ?? []).map((r) => r.collection_id));
+    setItems((c.data ?? []).filter((x) => !pending.has(x.id)));
     setMember(new Set((m.data ?? []).map((r) => r.collection_id)));
   }, [profile, postId]);
 

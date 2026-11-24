@@ -200,6 +200,14 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 24. Shared collections
+- Open a collection and tap Invite to ask people who follow you back (up to 10). They get an Activity notice and a Join / Decline card at the top of Collections.
+- Members add posts from the "…" menu (Save to collection lists shared collections too). Members remove only posts they added; the owner can remove anything or remove a person; members can leave. Posts a person added stay when they leave.
+- Sharing never widens who can see a post: people who can't see a post just don't see it in the grid. Only the owner can delete the collection.
+- Limits: 10 people, 500 posts.
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).

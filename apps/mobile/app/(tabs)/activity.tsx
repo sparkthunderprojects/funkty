@@ -14,7 +14,7 @@ import { Screen } from '../../src/ui/Screen';
 
 type Notice = {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'follow_request' | 'tag_request' | 'repost' | 'comment_like' | 'story_reply' | 'comment_held';
+  type: 'like' | 'comment' | 'follow' | 'follow_request' | 'tag_request' | 'repost' | 'comment_like' | 'story_reply' | 'comment_held' | 'collection_invite';
   post_id: string | null;
   actor_id: string;
   created_at: string;
@@ -36,6 +36,7 @@ const verbs: Record<Notice['type'], string> = {
   comment_like: 'liked your comment.',
   story_reply: 'replied to your story.',
   comment_held: 'commented and is waiting for your approval.',
+  collection_invite: 'invited you to a shared collection.',
 };
 
 export default function Activity() {
@@ -135,6 +136,12 @@ export default function Activity() {
                     <Button label="Decline" variant="secondary" onPress={() => respondTag(item, false)} />
                   </View>
                 </View>
+              ) : item.type === 'collection_invite' ? (
+                <Link href="/collections" asChild>
+                  <Pressable accessibilityRole="link" accessibilityLabel="Open collections">
+                    <Text style={{ color: colors.primary, fontWeight: '700' }}>View</Text>
+                  </Pressable>
+                </Link>
               ) : item.type === 'story_reply' ? (
                 <Link href={{ pathname: '/messages/[username]', params: { username } }} asChild>
                   <Pressable accessibilityRole="link" accessibilityLabel="Open message">
