@@ -773,6 +773,24 @@ export type Database = {
           },
         ]
       }
+      feed_not_interested: {
+        Row: { user_id: string; post_id: string; created_at: string }
+        Insert: { user_id: string; post_id: string; created_at?: string }
+        Update: { user_id?: string; post_id?: string; created_at?: string }
+        Relationships: []
+      }
+      muted_topics: {
+        Row: { user_id: string; tag: string; created_at: string }
+        Insert: { user_id: string; tag: string; created_at?: string }
+        Update: { user_id?: string; tag?: string; created_at?: string }
+        Relationships: []
+      }
+      reposts: {
+        Row: { user_id: string; post_id: string; note: string | null; created_at: string }
+        Insert: { user_id: string; post_id: string; note?: string | null; created_at?: string }
+        Update: { user_id?: string; post_id?: string; note?: string | null; created_at?: string }
+        Relationships: []
+      }
       highlights: {
         Row: { id: string; owner_id: string; title: string; cover_media_id: string | null; created_at: string }
         Insert: { id?: string; owner_id: string; title: string; cover_media_id?: string | null; created_at?: string }
@@ -1391,6 +1409,12 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      not_interested: { Args: { p_post: string }; Returns: undefined }
+      reset_not_interested: { Args: Record<string, never>; Returns: undefined }
+      mute_topic: { Args: { p_tag: string }; Returns: undefined }
+      unmute_topic: { Args: { p_tag: string }; Returns: undefined }
+      repost_post: { Args: { p_post: string; p_note?: string }; Returns: undefined }
+      unrepost_post: { Args: { p_post: string }; Returns: undefined }
       friend_suggestions: { Args: { p_limit?: number }; Returns: { user_id: string; mutual_count: number }[] }
       create_collection: { Args: { p_name: string }; Returns: Database['public']['Tables']['collections']['Row'] }
       set_collection_post: { Args: { p_collection_id: string; p_in: boolean; p_post_id: string }; Returns: undefined }

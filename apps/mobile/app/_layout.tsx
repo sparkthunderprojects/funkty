@@ -50,6 +50,7 @@ function Routes() {
         <Stack.Screen name="connections/[username]" options={pushed('People')} />
         <Stack.Screen name="find-friends" options={pushed('Find friends')} />
         <Stack.Screen name="qr" options={pushed('QR code')} />
+        <Stack.Screen name="settings/feed" options={pushed('Feed preferences')} />
       </Stack.Protected>
     </Stack>
   );

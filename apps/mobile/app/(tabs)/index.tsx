@@ -15,7 +15,9 @@ import { SuggestedPeople } from '../../src/ui/SuggestedPeople';
 import { markFeedReady } from '../../src/lib/feedReady';
 import { StoriesTray } from '../../src/ui/StoriesTray';
 
-type Mode = 'everyone' | 'following';
+type Mode = 'everyone' | 'following' | 'friends';
+type Item = { key: string; post: FeedPost; repostBy?: { username: string; note: string | null }; at: string };
+type RepostRow = { user_id: string; note: string | null; created_at: string; reposter: { username: string } | null; post: FeedPost | null };
 
 /** Keyset-ordered reverse-chronological feed. Ranking arrives with the feed service (later phase). */
 export default function Home() {
@@ -26,7 +28,7 @@ export default function Home() {
   const [unreadActivity, setUnreadActivity] = useState(0);
   const [unreadDms, setUnreadDms] = useState(0);
   const [mode, setMode] = useState<Mode>('everyone');
-  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [posts, setPosts] = useState<Item[]>([]);
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -36,23 +38,55 @@ export default function Home() {
     if (!profile) return;
     setFailed(false);
     let query = supabase.from('posts').select(feedSelect).is('archived_at', null).order('id', { ascending: false }).limit(30);
-    if (mode === 'following') {
-      const follows = await supabase
-        .from('follows')
-        .select('followee_id')
-        .eq('follower_id', profile.id)
-        .eq('state', 'active');
-      query = query.in('author_id', [profile.id, ...(follows.data ?? []).map((f) => f.followee_id)]);
+    let circle: string[] | null = null;
+    if (mode !== 'everyone') {
+      const [following, followers] = await Promise.all([
+        supabase.from('follows').select('followee_id').eq('follower_id', profile.id).eq('state', 'active'),
+        mode === 'friends'
+          ? supabase.from('follows').select('follower_id').eq('followee_id', profile.id).eq('state', 'active')
+          : Promise.resolve({ data: [] as { follower_id: string }[] }),
+      ]);
+      let ids = (following.data ?? []).map((f) => f.followee_id);
+      if (mode === 'friends') {
+        const back = new Set((followers.data ?? []).map((f) => f.follower_id));
+        ids = ids.filter((id) => back.has(id));
+      }
+      circle = ids;
+      query = query.in('author_id', [profile.id, ...ids]);
     }
     const { data, error } = await query;
     if (error) {
       setFailed(true);
     } else {
-      const muted = await loadMuted(profile.id);
-      const rows = ((data ?? []) as unknown as FeedPost[]).filter((r) => !muted.has(r.author_id));
+      const [muted, hidden, topics, reposted] = await Promise.all([
+        loadMuted(profile.id),
+        supabase.from('feed_not_interested').select('post_id').eq('user_id', profile.id),
+        supabase.from('muted_topics').select('tag').eq('user_id', profile.id),
+        circle && circle.length > 0
+          ? supabase
+              .from('reposts')
+              .select(`user_id, note, created_at, reposter:profiles!reposts_user_id_fkey(username), post:posts!reposts_post_id_fkey(${feedSelect})`)
+              .in('user_id', circle)
+              .order('created_at', { ascending: false })
+              .limit(30)
+          : Promise.resolve({ data: [] }),
+      ]);
+      const skipPosts = new Set((hidden.data ?? []).map((h) => h.post_id));
+      const tags = (topics.data ?? []).map((t) => t.tag);
+      const topicHidden = (p: FeedPost) => tags.some((t) => (p.caption ?? '').toLowerCase().split(/[^\p{L}\p{N}_#]+/u).includes(`#${t}`));
+      const ok = (p: FeedPost) => !muted.has(p.author_id) && !skipPosts.has(p.id) && p.archived_at === null && !topicHidden(p);
+      const own: Item[] = ((data ?? []) as unknown as FeedPost[]).filter(ok).map((p) => ({ key: p.id, post: p, at: p.created_at }));
+      const seen = new Set(own.map((i) => i.post.id));
+      const shared: Item[] = [];
+      for (const r of (reposted.data ?? []) as unknown as RepostRow[]) {
+        if (!r.post || !r.reposter || seen.has(r.post.id) || !ok(r.post)) continue;
+        seen.add(r.post.id);
+        shared.push({ key: `r-${r.user_id}-${r.post.id}`, post: r.post, repostBy: { username: r.reposter.username, note: r.note }, at: r.created_at });
+      }
+      const rows = [...own, ...shared].sort((a, b) => b.at.localeCompare(a.at));
       setPosts(rows);
       if (rows.length > 0) {
-        const ids = rows.map((r) => r.id);
+        const ids = rows.map((r) => r.post.id);
         const [likes, saves] = await Promise.all([
           supabase.from('likes').select('post_id').eq('user_id', profile.id).in('post_id', ids),
           supabase.from('saves').select('post_id').eq('user_id', profile.id).in('post_id', ids),
@@ -85,13 +119,13 @@ export default function Home() {
         <Wordmark height={26} />
         <View style={{ flex: 1, alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 999, padding: 3 }}>
-            {(['everyone', 'following'] as const).map((m) => {
+            {(['everyone', 'following', 'friends'] as const).map((m) => {
               const on = mode === m;
               return (
                 <Pressable
                   key={m}
                   accessibilityRole="tab"
-                  accessibilityLabel={m === 'everyone' ? 'For You' : 'Following'}
+                  accessibilityLabel={m === 'everyone' ? 'For You' : m === 'following' ? 'Following' : 'Friends'}
                   accessibilityState={{ selected: on }}
                   onPress={() => {
                     setLoading(true);
@@ -110,7 +144,7 @@ export default function Home() {
                   }}
                 >
                   <Text style={{ color: on ? colors.text : colors.textMuted, fontWeight: on ? '700' : '600', fontSize: 13 }}>
-                    {m === 'everyone' ? 'For You' : 'Following'}
+                    {m === 'everyone' ? 'For You' : m === 'following' ? 'Following' : 'Friends'}
                   </Text>
                 </Pressable>
               );
@@ -150,7 +184,7 @@ export default function Home() {
             <SuggestedPeople />
           </>
         }
-        keyExtractor={(post) => post.id}
+        keyExtractor={(item) => item.key}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
         contentContainerStyle={{ paddingTop: spacing.md, paddingBottom: tabSpace, flexGrow: 1 }}
@@ -159,13 +193,15 @@ export default function Home() {
             <Text style={{ color: colors.textMuted, fontSize: fontSize.body, margin: spacing.lg }}>
               {failed
                 ? 'Could not load the feed. Pull down to try again.'
+                : mode === 'friends'
+                  ? 'Friends are people you follow who follow you back. Nothing here yet.'
                 : mode === 'following'
                   ? 'Nothing here yet. Follow people from Search to fill your feed.'
                   : 'No posts yet. Tap Create to share the first one.'}
             </Text>
           )
         }
-        renderItem={({ item }) => <PostCard post={item} liked={liked.has(item.id)} saved={saved.has(item.id)} />}
+        renderItem={({ item }) => <PostCard post={item.post} repostBy={item.repostBy} liked={liked.has(item.post.id)} saved={saved.has(item.post.id)} />}
       />
     </SafeAreaView>
   );

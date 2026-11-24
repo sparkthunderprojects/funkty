@@ -161,6 +161,14 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 19. Feed controls, Friends tab and reposts
+- Feed tabs: For You, Following, Friends (people you follow who follow you back).
+- Not interested on any post hides it from your feed.
+- "Don't show #topic" hides the first hashtag in a caption; Settings > Feed preferences lists hidden topics, lets you add or remove them, and has Refresh my feed (brings back posts marked Not interested).
+- Repost with an optional 150-character note: shows in your followers' Following and Friends feeds with a "reposted" banner. Public accounts only, not your own posts, 30 an hour.
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).

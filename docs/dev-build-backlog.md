@@ -57,12 +57,10 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 ### From the TikTok audit (2026-11-23)
 
 Buildable now (Expo Go + Supabase):
-- Not interested / Manage topics / Refresh my feed (feed controls).
-- Repost with a short note.
+- Repost notifications for the author, a Reposts tab on profiles, and unrepost from the feed banner.
 - Find contacts (match phone contacts to Funkty accounts): needs an opt-in "let people find me by email or phone" setting and hashed matching on the server first.
 - Invite counts (how many people joined from your invite).
 - Shared collections (invite friends to one saved collection).
-- Friends tab (posts from mutual follows).
 - Screen time: daily limit, break reminders, sleep reminder, weekly recap.
 - Comment controls: filter keywords, approve comments, comments with media.
 - Privacy toggles: who can download, who can remix, activity status, post and profile view history.

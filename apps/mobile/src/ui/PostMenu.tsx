@@ -54,7 +54,7 @@ type Props = {
   onMuted?: () => void;
 };
 
-type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'tags' | 'copied' | 'thanks';
+type Panel = 'menu' | 'confirm-delete' | 'report' | 'edit' | 'note' | 'collections' | 'series' | 'credits' | 'update' | 'repost' | 'tags' | 'copied' | 'reposted' | 'thanks';
 
 /** The "..." menu on a post. The author edits or deletes; everyone else shares or reports. */
 export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoiler, compare, pinned, hideLikes, imageCount, series, credits, saved, onSaved, visible, onClose, onEdited, onDeleted, onMuted }: Props) {
@@ -65,6 +65,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [updateText, setUpdateText] = useState('');
+  const [repostNote, setRepostNote] = useState('');
   const [inCollections, setInCollections] = useState<string[]>([]);
   const mine = profile?.id === post.author_id;
   const username = post.profiles?.username ?? 'unknown';
@@ -108,6 +109,26 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     onEdited({ addedUpdate: { id: data.id, body: data.body, created_at: data.created_at } });
     setUpdateText('');
     close();
+  }
+
+  async function repost() {
+    const { error: e } = await supabase.rpc('repost_post', { p_post: post.id, p_note: repostNote.trim() || undefined });
+    if (e) return setError(friendlyError(e.message));
+    setRepostNote('');
+    tap();
+    setPanel('reposted');
+  }
+
+  async function notInterested() {
+    tap();
+    const { error: e } = await supabase.rpc('not_interested', { p_post: post.id });
+    if (!e) onMuted?.();
+  }
+
+  async function muteTopic(tag: string) {
+    tap();
+    const { error: e } = await supabase.rpc('mute_topic', { p_tag: tag });
+    if (!e) onMuted?.();
   }
 
   async function saveNote() {
@@ -276,6 +297,40 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     );
   }
 
+  if (panel === 'repost') {
+    return (
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.md }}>
+            <Text accessibilityRole="button" onPress={close} style={{ color: colors.text, fontSize: 16, width: 70 }}>
+              Cancel
+            </Text>
+            <Text style={{ flex: 1, textAlign: 'center', color: colors.text, fontSize: 17, fontWeight: '700' }}>Repost</Text>
+            <Text accessibilityRole="button" onPress={repost} style={{ color: colors.primary, fontSize: 16, fontWeight: '700', width: 70, textAlign: 'right' }}>
+              Repost
+            </Text>
+          </View>
+          <Text style={{ color: colors.textMuted, fontSize: 13, paddingHorizontal: spacing.md }}>
+            Shares this post with the people who follow you. Add a note if you like.
+          </Text>
+          <TextInput
+            accessibilityLabel="Repost note"
+            value={repostNote}
+            onChangeText={setRepostNote}
+            multiline
+            autoFocus
+            maxLength={150}
+            placeholder="Say something about it (optional)"
+            placeholderTextColor={colors.textMuted}
+            style={{ color: colors.text, fontSize: 16, padding: spacing.md, minHeight: 100, textAlignVertical: 'top', outlineStyle: 'none' } as never}
+          />
+          <View style={{ paddingHorizontal: spacing.md }}><CharCount value={repostNote} max={150} /></View>
+          {error ? <Text style={{ color: colors.danger, paddingHorizontal: spacing.md }}>{error}</Text> : null}
+        </SafeAreaView>
+      </Modal>
+    );
+  }
+
   if (panel === 'note') {
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
@@ -315,6 +370,7 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
     close();
     fn();
   };
+  const firstTag = /(?:^|\s)#([\p{L}\p{N}_]{1,50})/u.exec(post.caption ?? '')?.[1]?.toLowerCase();
   const share = then(() => void shareLink(`${username} on Funkty`, `/post/${post.id}`));
   const saveLabel = saved ? (inCollections.length > 0 ? `Saved to ${inCollections.join(', ')}` : 'Saved. Add to a collection') : 'Save to collection';
   const actions: SheetAction[] =
@@ -330,6 +386,8 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
           ? [{ label: 'Thanks. We will review this post.', onPress: close }]
           : panel === 'copied'
             ? [{ label: 'Link copied', onPress: close }]
+          : panel === 'reposted'
+            ? [{ label: 'Reposted to your followers', onPress: close }]
           : mine
             ? [
                 { label: 'Edit caption', onPress: () => { setCaption(currentCaption ?? ''); setPanel('edit'); } },
@@ -353,8 +411,11 @@ export function PostMenu({ post, caption: currentCaption, commentsEnabled, spoil
                 ...(myTag ? [{ label: 'Remove me from this post', onPress: then(() => void removeMyTag()) }] : []),
                 { label: note ? 'Edit private note' : 'Add private note', onPress: () => setPanel('note') },
                 { label: saveLabel, onPress: () => setPanel('collections') },
+                { label: 'Repost', onPress: () => { setError(null); setPanel('repost'); } },
                 { label: 'Share', onPress: share },
                 { label: 'Copy link', onPress: () => void copyLink() },
+                { label: 'Not interested', onPress: () => void notInterested() },
+                ...(firstTag ? [{ label: `Don't show #${firstTag}`, onPress: () => void muteTopic(firstTag) }] : []),
                 { label: `Mute ${post.profiles?.username ?? 'account'}`, onPress: () => void mute() },
                 { label: 'Report', onPress: () => setPanel('report'), destructive: true },
               ];

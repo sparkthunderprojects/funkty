@@ -23,9 +23,9 @@ function compact(n: number): string {
   return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace('.0', '')}M` : n >= 1000 ? `${(n / 1000).toFixed(1).replace('.0', '')}K` : String(n);
 }
 
-type Props = { post: FeedPost; liked: boolean; saved: boolean; onDeleted?: () => void; allUpdates?: boolean };
+type Props = { post: FeedPost; liked: boolean; saved: boolean; onDeleted?: () => void; allUpdates?: boolean; repostBy?: { username: string; note: string | null } };
 
-export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, onDeleted, allUpdates }: Props) {
+export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, onDeleted, allUpdates, repostBy }: Props) {
   const { colors, fontSize, spacing } = useTheme();
   const { profile } = useSession();
   const [liked, setLiked] = useState(initiallyLiked);
@@ -82,6 +82,15 @@ export function PostCard({ post, liked: initiallyLiked, saved: initiallySaved, o
   if (removed) return null;
   return (
     <View style={{ gap: spacing.sm, paddingVertical: 12, backgroundColor: colors.card, borderRadius: 28, overflow: 'hidden' }}>
+      {repostBy ? (
+        <View style={{ paddingHorizontal: 14, gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="repeat" size={16} color={colors.textMuted} />
+            <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '600' }}>@{repostBy.username} reposted</Text>
+          </View>
+          {repostBy.note ? <Text style={{ color: colors.text, fontSize: 14 }}>{repostBy.note}</Text> : null}
+        </View>
+      ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
         <Link href={{ pathname: '/user/[username]', params: { username } }} asChild>
           <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>

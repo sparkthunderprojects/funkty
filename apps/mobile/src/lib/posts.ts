@@ -128,6 +128,16 @@ export function friendlyError(message: string | undefined): string {
       return 'A highlight can hold up to 50 stories.';
     case 'invalid_title':
       return 'Give the highlight a name of 1 to 20 characters.';
+    case 'own_post':
+      return 'You cannot repost your own post.';
+    case 'note_too_long':
+      return 'A repost note can be up to 150 characters.';
+    case 'rate_limited':
+      return 'You are reposting very fast. Try again in a little while.';
+    case 'invalid_topic':
+      return 'Enter one word, without spaces.';
+    case 'too_many_topics':
+      return 'You can mute up to 100 topics.';
     default:
       return 'Something went wrong. Please try again.';
   }
