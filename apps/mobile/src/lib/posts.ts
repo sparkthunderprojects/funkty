@@ -99,6 +99,10 @@ export function friendlyError(message: string | undefined): string {
       return 'Confirm your email address first. Check your inbox for the link we sent.';
     case 'action_restricted':
       return 'Your account is currently restricted from doing this.';
+    case 'reposts_off':
+      return 'This person has turned off reposts.';
+    case 'invalid_words':
+      return 'Use up to 50 words or phrases, each up to 40 characters.';
     case 'rate_limited':
       return 'You are doing that too quickly. Try again in a little while.';
     case 'not_found':

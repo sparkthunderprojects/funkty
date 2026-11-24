@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Logo } from './Logo';
+import { useReduceMotion } from '../lib/motion';
 
 /** Full-screen Funkty mark on the app background, with a gentle pulse. */
 export function Splash() {
   const { colors } = useTheme();
   const pulse = useRef(new Animated.Value(0)).current;
+  const reduce = useReduceMotion();
   useEffect(() => {
+    if (reduce) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
@@ -16,7 +19,7 @@ export function Splash() {
     );
     loop.start();
     return () => loop.stop();
-  }, [pulse]);
+  }, [pulse, reduce]);
   return (
     <View
       accessibilityLabel="Loading Funkty"
@@ -39,6 +42,7 @@ export function SplashOverlay({ ready: feedReady, minMs = 700, maxMs = 6000 }: {
   const ready = feedReady || timedOut;
   const [gone, setGone] = useState(false);
   const fade = useRef(new Animated.Value(1)).current;
+  const reduce = useReduceMotion();
   useEffect(() => {
     const t = setTimeout(() => setWaited(true), minMs);
     return () => clearTimeout(t);
@@ -50,8 +54,8 @@ export function SplashOverlay({ ready: feedReady, minMs = 700, maxMs = 6000 }: {
   }, [maxMs]);
   useEffect(() => {
     if (!ready || !waited) return;
-    Animated.timing(fade, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => setGone(true));
-  }, [ready, waited, fade]);
+    Animated.timing(fade, { toValue: 0, duration: reduce ? 0 : 250, useNativeDriver: true }).start(() => setGone(true));
+  }, [ready, waited, fade, reduce]);
   if (gone) return null;
   return (
     <Animated.View pointerEvents={ready && waited ? 'none' : 'auto'} style={[StyleSheet.absoluteFill, { opacity: fade }]}>

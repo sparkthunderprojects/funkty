@@ -186,6 +186,15 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 22. Wellbeing, comment controls and accessibility
+- Settings > Wellbeing and screen time: time today and the last 7 days, a daily limit (off, 30m, 1h, 1.5h, 2h; accounts under 18 start at 1 hour), a take-a-break nudge (10, 20 or 30 minutes of continuous use), and a sleep reminder (from 8pm to 11pm until 7am). Reminders are full-screen and can be dismissed; the daily limit can be snoozed for 15 minutes. Time is counted on this device only.
+- Reduce motion: a switch in Wellbeing, also on automatically when the phone's Reduce Motion is on. Turns off screen slide animations and the loading pulse.
+- Settings > Comment and repost controls: approve comments first, hidden words and phrases (comments containing them are held), and Allow reposts.
+- Held comments: only the commenter and the post owner can see them; the owner gets Approve and Remove on the post screen. Held comments don't count or notify until approved.
+- Reposts switched off: other people see "This person has turned off reposts".
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).

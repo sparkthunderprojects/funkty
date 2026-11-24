@@ -138,6 +138,7 @@ export type Database = {
           body: string
           created_at: string
           deleted_at: string | null
+          held_at: string | null
           id: string
           parent_id: string | null
           post_id: string
@@ -148,6 +149,7 @@ export type Database = {
           body: string
           created_at?: string
           deleted_at?: string | null
+          held_at?: string | null
           id?: string
           parent_id?: string | null
           post_id: string
@@ -158,6 +160,7 @@ export type Database = {
           body?: string
           created_at?: string
           deleted_at?: string | null
+          held_at?: string | null
           id?: string
           parent_id?: string | null
           post_id?: string
@@ -812,6 +815,12 @@ export type Database = {
         Update: { message_id?: string; user_id?: string; emoji?: string; created_at?: string }
         Relationships: []
       }
+      account_controls: {
+        Row: { user_id: string; require_comment_approval: boolean; comment_words: string[]; allow_reposts: boolean; updated_at: string }
+        Insert: { user_id: string; require_comment_approval?: boolean; comment_words?: string[]; allow_reposts?: boolean; updated_at?: string }
+        Update: { user_id?: string; require_comment_approval?: boolean; comment_words?: string[]; allow_reposts?: boolean; updated_at?: string }
+        Relationships: []
+      }
       comment_likes: {
         Row: { comment_id: string; user_id: string; created_at: string }
         Insert: { comment_id: string; user_id: string; created_at?: string }
@@ -1442,6 +1451,9 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      set_account_controls: { Args: { p_require_approval: boolean; p_words: string[]; p_allow_reposts: boolean }; Returns: undefined }
+      approve_comment: { Args: { p_comment_id: string }; Returns: undefined }
+      reject_comment: { Args: { p_comment_id: string }; Returns: undefined }
       like_comment: { Args: { p_comment_id: string }; Returns: undefined }
       unlike_comment: { Args: { p_comment_id: string }; Returns: undefined }
       comment_like_counts: { Args: { p_ids: string[] }; Returns: { comment_id: string; like_count: number; liked: boolean }[] }

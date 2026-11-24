@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { type FeedPost, feedSelect, friendlyError, timeAgo } from '../../src/lib/posts';
+import { tap } from '../../src/lib/haptics';
 import { useSession } from '../../src/lib/session';
 import { supabase } from '../../src/lib/supabase';
 import { useTheme } from '../../src/theme';
@@ -18,6 +19,7 @@ type Comment = {
   created_at: string;
   author_id: string;
   parent_id: string | null;
+  held_at: string | null;
   profiles: { username: string; avatar: { storage_key: string } | null } | null;
 };
 
@@ -47,7 +49,7 @@ export default function PostDetail() {
       supabase.from('saves').select('post_id, note').eq('user_id', profile.id).eq('post_id', id).maybeSingle(),
       supabase
         .from('comments')
-        .select('id, body, created_at, author_id, parent_id, profiles!comments_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))')
+        .select('id, body, created_at, author_id, parent_id, held_at, profiles!comments_author_id_fkey(username, avatar:media_assets!profiles_avatar_media_fk(storage_key))')
         .eq('post_id', id)
         .order('id', { ascending: true })
         .limit(200),
@@ -102,6 +104,12 @@ export default function PostDetail() {
     void load();
   }
 
+  async function moderate(commentId: string, approve: boolean) {
+    tap();
+    await supabase.rpc(approve ? 'approve_comment' : 'reject_comment', { p_comment_id: commentId });
+    void load();
+  }
+
   const threads = useMemo(() => {
     const replies = new Map<string, Comment[]>();
     for (const c of comments) {
@@ -120,6 +128,17 @@ export default function PostDetail() {
             <Text style={{ fontWeight: '600' }}>{item.profiles?.username ?? 'unknown'} </Text>
             {item.body}
           </Text>
+          {item.held_at ? (
+            <Text style={{ color: colors.textMuted, fontSize: 12, fontStyle: 'italic' }}>
+              {post?.author_id === profile?.id ? 'Waiting for your approval' : 'Waiting for approval. Only you and the post owner can see this.'}
+            </Text>
+          ) : null}
+          {item.held_at && post?.author_id === profile?.id ? (
+            <View style={{ flexDirection: 'row', gap: 16 }}>
+              <Text accessibilityRole="button" onPress={() => void moderate(item.id, true)} style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>Approve</Text>
+              <Text accessibilityRole="button" onPress={() => void moderate(item.id, false)} style={{ color: colors.danger, fontSize: 13, fontWeight: '700' }}>Remove</Text>
+            </View>
+          ) : null}
           <View style={{ flexDirection: 'row', gap: 14 }}>
             <Text style={{ color: colors.textMuted, fontSize: 12 }}>{timeAgo(item.created_at)}</Text>
             <Text

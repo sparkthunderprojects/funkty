@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppHeader } from '../src/ui/AppHeader';
 import { Splash } from '../src/ui/Splash';
+import { WellbeingGuard } from '../src/ui/WellbeingGuard';
+import { useReduceMotion } from '../src/lib/motion';
 import { useTheme } from '../src/theme';
 import { SessionProvider, useSession } from '../src/lib/session';
 
@@ -17,9 +19,12 @@ const pushed = (title: string) => ({
 
 function Routes() {
   const { loading, session, profile } = useSession();
+  const reduce = useReduceMotion();
   if (loading) return <Splash />;
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <>
+    {profile ? <WellbeingGuard isTeen={profile.is_teen} /> : null}
+    <Stack screenOptions={{ headerShown: false, animation: reduce ? 'none' : 'default' }}>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
@@ -54,8 +59,11 @@ function Routes() {
         <Stack.Screen name="drafts" options={pushed('Drafts and scheduled')} />
         <Stack.Screen name="settings/close-friends" options={pushed('Close friends')} />
         <Stack.Screen name="settings/story-archive" options={pushed('Story archive')} />
+        <Stack.Screen name="settings/wellbeing" options={pushed('Wellbeing')} />
+        <Stack.Screen name="settings/controls" options={pushed('Comment and repost controls')} />
       </Stack.Protected>
     </Stack>
+    </>
   );
 }
 
