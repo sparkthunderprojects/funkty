@@ -6,10 +6,12 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, Switch, Text, TextI
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type Aspect, type Edit, baseKey, defaultEdit, renderEdit } from '../../src/lib/editing';
 import { filters } from '../../src/lib/filters';
+import { type ScheduleKey, scheduleDate, scheduleOptions } from '../../src/lib/schedule';
 import { applyPixelFilter, filtersSupported } from '../../src/lib/pixelFilter';
 import {
   type PickedMedia,
   maxImageWidth,
+  saveDraftPhotos,
   maxPostPhotos,
   pickMedia,
   publishPhotos,
@@ -44,6 +46,7 @@ export default function Create() {
   const [spoiler, setSpoiler] = useState(false);
   const [compare, setCompare] = useState(false);
   const [closeOnly, setCloseOnly] = useState(false);
+  const [when, setWhen] = useState<ScheduleKey>('now');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [libraryDenied, setLibraryDenied] = useState(false);
@@ -125,8 +128,34 @@ export default function Create() {
     else close();
   }
 
+  const canSchedule = mode === 'post' && items[0]?.kind !== 'video' && !(compare && items.length === 2);
+
+  /** Keeps the photos as a draft, or schedules them when a time other than Now is chosen. */
+  async function saveAsDraft(asDraftOnly: boolean) {
+    if (items.length === 0 || !profile) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const rendered = [];
+      for (const item of items) rendered.push(await renderEdit(item, item.edit, maxImageWidth));
+      await saveDraftPhotos(rendered, profile.id, caption, items.map((i) => i.alt ?? ''), spoiler, asDraftOnly ? null : scheduleDate(when));
+      setItems([]);
+      setCaption('');
+      setSpoiler(false);
+      setCompare(false);
+      setWhen('now');
+      setStep('select');
+      router.push('/drafts');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function share() {
     if (items.length === 0 || !profile) return;
+    if (canSchedule && when !== 'now') return saveAsDraft(false);
     setBusy(true);
     setError(null);
     try {
@@ -157,7 +186,7 @@ export default function Create() {
   }
 
   const title = step === 'edit' ? 'Edit' : step === 'details' ? modeTitle[mode] : modeTitle[mode];
-  const nextLabel = step === 'details' ? (mode === 'story' ? 'Share to story' : 'Share') : 'Next';
+  const nextLabel = step === 'details' ? (mode === 'story' ? 'Share to story' : canSchedule && when !== 'now' ? 'Schedule' : 'Share') : 'Next';
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, height: 48 }}>
@@ -305,6 +334,30 @@ export default function Create() {
                 <Text style={{ color: colors.textMuted, fontSize: 13 }}>People tap to reveal it. Use it for results, plot twists and surprises.</Text>
               </View>
               <Switch accessibilityLabel="Mark as spoiler" value={spoiler} onValueChange={setSpoiler} />
+            </View>
+          ) : null}
+          {canSchedule ? (
+            <View style={{ gap: spacing.sm }}>
+              <Text style={{ color: colors.text, fontWeight: '600' }}>When to post</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {scheduleOptions.map((o) => (
+                  <Pressable
+                    key={o.key}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: when === o.key }}
+                    onPress={() => setWhen(o.key)}
+                    style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, backgroundColor: when === o.key ? colors.primary : colors.surface }}
+                  >
+                    <Text style={{ color: when === o.key ? colors.onPrimary : colors.text, fontWeight: '600' }}>{o.label}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              {when !== 'now' && scheduleDate(when) ? (
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>Goes out {scheduleDate(when)!.toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.</Text>
+              ) : null}
+              <Pressable accessibilityRole="button" onPress={() => void saveAsDraft(true)} style={{ alignSelf: 'flex-start', paddingVertical: 8 }}>
+                <Text style={{ color: colors.primary, fontWeight: '700' }}>Save as draft</Text>
+              </Pressable>
             </View>
           ) : null}
           {mode === 'post' && items.length === 2 && items[0]?.kind !== 'video' ? (

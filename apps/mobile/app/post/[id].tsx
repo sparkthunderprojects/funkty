@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
@@ -36,6 +37,7 @@ export default function PostDetail() {
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [likes, setLikes] = useState<Record<string, { count: number; liked: boolean }>>({});
 
   const load = useCallback(async () => {
     if (!profile || !id) return;
@@ -55,6 +57,11 @@ export default function PostDetail() {
     setSaved(!!saveRes.data);
     setNote(saveRes.data?.note ?? null);
     setComments((commentRes.data ?? []) as unknown as Comment[]);
+    const ids = (commentRes.data ?? []).map((c) => c.id);
+    if (ids.length > 0) {
+      const counts = await supabase.rpc('comment_like_counts', { p_ids: ids });
+      setLikes(Object.fromEntries((counts.data ?? []).map((r) => [r.comment_id, { count: r.like_count, liked: r.liked }])));
+    }
     setLoading(false);
   }, [id, profile]);
 
@@ -80,6 +87,14 @@ export default function PostDetail() {
     setBody('');
     setReplyTo(null);
     void load();
+  }
+
+  async function toggleCommentLike(commentId: string) {
+    const cur = likes[commentId] ?? { count: 0, liked: false };
+    const next = { count: Math.max(0, cur.count + (cur.liked ? -1 : 1)), liked: !cur.liked };
+    setLikes((l) => ({ ...l, [commentId]: next }));
+    const { error: e } = await supabase.rpc(cur.liked ? 'unlike_comment' : 'like_comment', { p_comment_id: commentId });
+    if (e) setLikes((l) => ({ ...l, [commentId]: cur }));
   }
 
   async function remove(commentId: string) {
@@ -125,6 +140,16 @@ export default function PostDetail() {
             ) : null}
           </View>
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={likes[item.id]?.liked ? 'Unlike comment' : 'Like comment'}
+          onPress={() => void toggleCommentLike(item.id)}
+          hitSlop={10}
+          style={{ alignItems: 'center', width: 32, paddingTop: 2 }}
+        >
+          <Ionicons name={likes[item.id]?.liked ? 'heart' : 'heart-outline'} size={16} color={likes[item.id]?.liked ? colors.danger : colors.textMuted} />
+          {(likes[item.id]?.count ?? 0) > 0 ? <Text style={{ color: colors.textMuted, fontSize: 11 }}>{likes[item.id]!.count}</Text> : null}
+        </Pressable>
       </View>
     );
   }

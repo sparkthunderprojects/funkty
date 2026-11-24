@@ -177,8 +177,16 @@ A running list of every feature and function in the app, so you can see what you
 
 ---
 
+## 21. Drafts, scheduled posts, comment likes and streaks
+- Create > details (photo posts): "When to post" chips (Now, In 1 hour, This evening, Tomorrow 9am, Saturday 10am) and Save as draft. Scheduled posts are published by the server every minute, even with the app closed.
+- Settings > Drafts and scheduled posts: post now, edit the caption, move the time, or delete. A post that could not go out is marked with the reason.
+- Comment likes: a heart and count on every comment.
+- Posting streak: consecutive days (UTC) with a post, with your best, on Your week.
+- Limits: photo posts only (videos, reels and before/after posts post now); 50 drafts; up to 30 days ahead.
+
+---
+
 ## Not built yet
 See `docs/dev-build-backlog.md` for the full list. Headlines:
 - Push notifications, video compression, deep links, biometric lock (need a development build).
 - Content scanning, message-request logic on the server, pgTAP in CI.
-- Ideas ready to build: comment likes, drafts and scheduled posts.

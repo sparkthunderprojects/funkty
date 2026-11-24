@@ -128,6 +128,10 @@ export function friendlyError(message: string | undefined): string {
       return 'A highlight can hold up to 50 stories.';
     case 'invalid_title':
       return 'Give the highlight a name of 1 to 20 characters.';
+    case 'invalid_schedule':
+      return 'Pick a time between a minute and 30 days from now.';
+    case 'too_many_drafts':
+      return 'You can keep up to 50 drafts. Post or delete one first.';
     case 'too_many_close_friends':
       return 'Your close friends list can have up to 500 people.';
     case 'invalid_audience':
@@ -210,6 +214,20 @@ export async function publishPhotos(assets: Picked[], userId: string, caption: s
   });
   if (published.error || !published.data) throw new Error(friendlyError(published.error?.message));
   return published.data.id;
+}
+
+/** Uploads the photos and keeps them as a draft, or as a post scheduled for later. */
+export async function saveDraftPhotos(assets: Picked[], userId: string, caption: string, altTexts: string[], isSpoiler: boolean, scheduledFor: Date | null): Promise<void> {
+  const ids: string[] = [];
+  for (const asset of assets) ids.push(await uploadImage(asset, userId));
+  const { error } = await supabase.rpc('save_draft', {
+    p_caption: caption.trim(),
+    p_media_ids: ids,
+    p_alt_texts: ids.map((_, n) => (altTexts[n] ?? '').trim().slice(0, 1000)),
+    p_spoiler: isSpoiler,
+    p_scheduled_for: scheduledFor ? scheduledFor.toISOString() : undefined,
+  });
+  if (error) throw new Error(friendlyError(error.message));
 }
 
 export async function publishStoryPhoto(asset: Picked, userId: string, closeFriendsOnly = false): Promise<void> {

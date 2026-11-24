@@ -52,7 +52,7 @@ Not yet tested on a phone, only in a browser with mocked data. Check once the de
 
 ## Ideas not built yet (buildable now)
 
-- Comment likes, scheduled posts and drafts.
+- Drafts and scheduling for videos and reels, a custom date and time picker, and notifying authors about comment likes.
 - Story reply notifications, reactions shown on the story viewer for the author, close friends for posts.
 
 ### From the TikTok audit (2026-11-23)
@@ -66,7 +66,7 @@ Buildable now (Expo Go + Supabase):
 - Comment controls: filter keywords, approve comments, comments with media.
 - Privacy toggles: who can download, who can remix, activity status, post and profile view history.
 - Accessibility: reduce motion, captions on by default.
-- Series planner / posting streaks for creators.
+- Series planner for creators.
 
 Needs a development build or heavy media work:
 - Remix (Duet/Stitch style) side-by-side and clip-in video.

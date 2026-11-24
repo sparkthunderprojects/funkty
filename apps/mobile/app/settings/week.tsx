@@ -12,9 +12,14 @@ export default function Week() {
   const { colors, spacing } = useTheme();
   const { profile } = useSession();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [streak, setStreak] = useState<{ current: number; best: number; today: boolean } | null>(null);
 
   useEffect(() => {
     if (!profile) return;
+    supabase.rpc('posting_streak').then(({ data }) => {
+      const r = data?.[0];
+      if (r) setStreak({ current: r.current_streak, best: r.best_streak, today: r.posted_today });
+    });
     const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
     const opts = { count: 'exact', head: true } as const;
     Promise.all([
@@ -39,6 +44,13 @@ export default function Week() {
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+        <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: spacing.md, gap: 2 }}>
+          <Text style={{ color: colors.text, fontSize: 32, fontWeight: '800' }}>{streak ? `${streak.current} ${streak.current === 1 ? 'day' : 'days'}` : '–'}</Text>
+          <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+            Posting streak{streak ? ` · best ${streak.best}` : ''}
+            {streak && streak.current > 0 && !streak.today ? ' · post today to keep it going' : ''}
+          </Text>
+        </View>
         <Text style={{ color: colors.textMuted, fontSize: 13 }}>The last 7 days. Only you can see this.</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
           {tiles.map(([label, value]) => (

@@ -812,6 +812,18 @@ export type Database = {
         Update: { message_id?: string; user_id?: string; emoji?: string; created_at?: string }
         Relationships: []
       }
+      comment_likes: {
+        Row: { comment_id: string; user_id: string; created_at: string }
+        Insert: { comment_id: string; user_id: string; created_at?: string }
+        Update: { comment_id?: string; user_id?: string; created_at?: string }
+        Relationships: []
+      }
+      post_drafts: {
+        Row: { id: string; owner_id: string; caption: string | null; media_ids: string[]; alt_texts: string[] | null; is_spoiler: boolean; scheduled_for: string | null; status: string; error: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; owner_id: string; caption?: string | null; media_ids: string[]; alt_texts?: string[] | null; is_spoiler?: boolean; scheduled_for?: string | null; status?: string; error?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; owner_id?: string; caption?: string | null; media_ids?: string[]; alt_texts?: string[] | null; is_spoiler?: boolean; scheduled_for?: string | null; status?: string; error?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       highlights: {
         Row: { id: string; owner_id: string; title: string; cover_media_id: string | null; created_at: string }
         Insert: { id?: string; owner_id: string; title: string; cover_media_id?: string | null; created_at?: string }
@@ -1430,6 +1442,14 @@ export type Database = {
       add_post_update: { Args: { p_body: string; p_post_id: string }; Returns: Database['public']['Tables']['post_updates']['Row'] }
       delete_post_update: { Args: { p_update_id: string }; Returns: undefined }
       explore_posts: { Args: { p_limit?: number }; Returns: { post_id: string }[] }
+      like_comment: { Args: { p_comment_id: string }; Returns: undefined }
+      unlike_comment: { Args: { p_comment_id: string }; Returns: undefined }
+      comment_like_counts: { Args: { p_ids: string[] }; Returns: { comment_id: string; like_count: number; liked: boolean }[] }
+      posting_streak: { Args: Record<string, never>; Returns: { current_streak: number; best_streak: number; posted_today: boolean }[] }
+      save_draft: { Args: { p_caption: string; p_media_ids: string[]; p_alt_texts?: string[]; p_spoiler?: boolean; p_scheduled_for?: string }; Returns: Database['public']['Tables']['post_drafts']['Row'] }
+      update_draft: { Args: { p_id: string; p_caption: string; p_scheduled_for?: string }; Returns: Database['public']['Tables']['post_drafts']['Row'] }
+      delete_draft: { Args: { p_id: string }; Returns: undefined }
+      publish_draft: { Args: { p_id: string }; Returns: Database['public']['Tables']['posts']['Row'] }
       set_close_friend: { Args: { p_friend: string; p_in: boolean }; Returns: undefined }
       set_story_audience: { Args: { p_story_id: string; p_audience: string }; Returns: undefined }
       reply_to_story: { Args: { p_story_id: string; p_body: string }; Returns: Database['public']['Tables']['messages']['Row'] }
